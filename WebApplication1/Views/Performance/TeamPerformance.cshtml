@@ -1,0 +1,181 @@
+﻿@model List<WebApplication1.Controllers.TeamMemberPerformance>
+@{
+    ViewData["Title"] = "Team Performance";
+    bool isSystemAdmin = ViewBag.IsSystemAdmin == true;
+    bool isHRAdmin = ViewBag.IsHRAdmin == true;
+    var topPerformers = ViewBag.TopPerformers as List<WebApplication1.Controllers.TeamMemberPerformance>;
+    var needImprovement = ViewBag.NeedImprovement as List<WebApplication1.Controllers.TeamMemberPerformance>;
+    double avgScore = ViewBag.AverageScore;
+}
+
+<div class="container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1"><i class="bi bi-people text-primary me-2"></i>Team Performance</h2>
+            <p class="text-muted mb-0">Monitor and track your team's performance metrics</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back
+            </a>
+            @if (isSystemAdmin || isHRAdmin)
+            {
+                <a asp-action="SkillsDirectory" class="btn btn-outline-primary">
+                    <i class="bi bi-tools me-1"></i> Skills Directory
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm border-0 bg-primary bg-opacity-10">
+                <div class="card-body text-center">
+                    <i class="bi bi-people text-primary fs-1 mb-2"></i>
+                    <h3 class="mb-0">@ViewBag.TeamCount</h3>
+                    <small class="text-muted">Team Members</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm border-0 bg-success bg-opacity-10">
+                <div class="card-body text-center">
+                    <i class="bi bi-graph-up text-success fs-1 mb-2"></i>
+                    <h3 class="mb-0">@avgScore.ToString("F1")%</h3>
+                    <small class="text-muted">Average Score</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm border-0 bg-warning bg-opacity-10">
+                <div class="card-body text-center">
+                    <i class="bi bi-trophy text-warning fs-1 mb-2"></i>
+                    <h3 class="mb-0">@(topPerformers?.Count ?? 0)</h3>
+                    <small class="text-muted">Top Performers</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm border-0 bg-danger bg-opacity-10">
+                <div class="card-body text-center">
+                    <i class="bi bi-exclamation-triangle text-danger fs-1 mb-2"></i>
+                    <h3 class="mb-0">@(needImprovement?.Count ?? 0)</h3>
+                    <small class="text-muted">Need Improvement</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Performers -->
+    @if (topPerformers != null && topPerformers.Any())
+    {
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-warning bg-opacity-10 border-0">
+                <h5 class="mb-0"><i class="bi bi-trophy text-warning me-2"></i>Top Performers</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    @foreach (var perf in topPerformers)
+                    {
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-warning">
+                                <div class="card-body text-center">
+                                    <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                        <span class="fw-bold text-warning fs-4">@perf.Employee.FullName?.Substring(0, 1)</span>
+                                    </div>
+                                    <h6 class="mb-1">@perf.Employee.FullName</h6>
+                                    <small class="text-muted d-block mb-2">@perf.Employee.Department?.DepartmentName</small>
+                                    <span class="badge bg-@perf.PerformanceData.BadgeColor fs-6">@perf.PerformanceData.OverallScore%</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- All Team Members -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-0">
+            <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>All Team Members</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Employee</th>
+                            <th>Department</th>
+                            <th class="text-center">Attendance</th>
+                            <th class="text-center">Leave</th>
+                            <th class="text-center">Missions</th>
+                            <th class="text-center">Skills</th>
+                            <th class="text-center">Overall</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var member in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px;">
+                                            <span class="text-white fw-bold" style="font-size: 0.8rem;">
+                                                @member.Employee.FullName?.Substring(0, 1)
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <strong>@member.Employee.FullName</strong>
+                                            <br />
+                                            <small class="text-muted">@member.Employee.Position?.PositionTitle</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>@member.Employee.Department?.DepartmentName</td>
+                                <td class="text-center">
+                                    <span class="badge bg-@(member.PerformanceData.AttendanceScore >= 80 ? "success" : member.PerformanceData.AttendanceScore >= 60 ? "warning" : "danger")">
+                                        @member.PerformanceData.AttendanceScore.ToString("F0")%
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-@(member.PerformanceData.LeaveScore >= 80 ? "success" : member.PerformanceData.LeaveScore >= 60 ? "warning" : "danger")">
+                                        @member.PerformanceData.LeaveScore.ToString("F0")%
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-@(member.PerformanceData.MissionScore >= 80 ? "success" : member.PerformanceData.MissionScore >= 60 ? "warning" : "danger")">
+                                        @member.PerformanceData.MissionScore.ToString("F0")%
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-@(member.PerformanceData.SkillsScore >= 80 ? "success" : member.PerformanceData.SkillsScore >= 60 ? "warning" : "danger")">
+                                        @member.PerformanceData.SkillsScore.ToString("F0")%
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-@member.PerformanceData.BadgeColor fs-6">
+                                        @member.PerformanceData.OverallScore%
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="EmployeePerformance" asp-route-id="@member.Employee.EmployeeId" class="btn btn-outline-primary" title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a asp-action="AddNote" asp-route-employeeId="@member.Employee.EmployeeId" class="btn btn-outline-success" title="Add Note">
+                                            <i class="bi bi-chat-plus"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

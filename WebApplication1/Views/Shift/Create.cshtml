@@ -1,0 +1,208 @@
+﻿@{
+    ViewData["Title"] = "Create Shift";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-plus-circle"></i> Create New Shift
+                    </h4>
+                    <small>System Admin - Create a new shift type</small>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> @ViewBag.Error
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <form method="post" asp-action="Create">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Shift Name -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-tag"></i> Shift Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="Name" class="form-control" placeholder="e.g., Morning Shift, Night Shift" required />
+                            <small class="text-muted">Enter a descriptive name for this shift</small>
+                        </div>
+
+                        <!-- Shift Type -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-diagram-3"></i> Shift Type <span class="text-danger">*</span>
+                            </label>
+                            <select name="Type" class="form-select" required>
+                                <option value="">-- Select Type --</option>
+                                <option value="Normal">Normal - Standard working hours</option>
+                                <option value="Split">Split - Divided working hours with break</option>
+                                <option value="Rotational">Rotational - Rotating schedule</option>
+                                <option value="Custom">Custom - Special/custom schedule</option>
+                            </select>
+                            <small class="text-muted">Select the type of shift schedule</small>
+                        </div>
+
+                        <!-- Time Settings -->
+                        <div class="card mb-3 border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="bi bi-clock"></i> Time Settings</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="bi bi-sunrise"></i> Start Time <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="time" name="StartTime" class="form-control" required />
+                                        <small class="text-muted">When does the shift start?</small>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="bi bi-sunset"></i> End Time <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="time" name="EndTime" class="form-control" required />
+                                        <small class="text-muted">When does the shift end?</small>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="bi bi-cup-hot"></i> Break Duration (minutes)
+                                        </label>
+                                        <input type="number" name="BreakDuration" class="form-control" value="0" min="0" max="480" />
+                                        <small class="text-muted">Total break time in minutes (optional)</small>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="bi bi-calendar-date"></i> Specific Date (Optional)
+                                        </label>
+                                        <input type="date" name="ShiftDate" class="form-control" />
+                                        <small class="text-muted">Leave empty for recurring shifts</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Shift Type Descriptions -->
+                        <div class="accordion mb-4" id="shiftTypeHelp">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#helpContent">
+                                        <i class="bi bi-question-circle me-2"></i> Help: Understanding Shift Types
+                                    </button>
+                                </h2>
+                                <div id="helpContent" class="accordion-collapse collapse" data-bs-parent="#shiftTypeHelp">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <div class="card border-primary h-100">
+                                                    <div class="card-header bg-primary text-white">
+                                                        <i class="bi bi-clock"></i> Normal
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <p class="small mb-0">Standard working hours shift. Example: 9:00 AM to 5:00 PM with a 1-hour lunch break.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <div class="card border-info h-100">
+                                                    <div class="card-header bg-info text-white">
+                                                        <i class="bi bi-arrows-expand"></i> Split
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <p class="small mb-0">Divided working hours with a long break. Example: 8:00 AM - 12:00 PM, then 4:00 PM - 8:00 PM.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <div class="card border-warning h-100">
+                                                    <div class="card-header bg-warning text-dark">
+                                                        <i class="bi bi-arrow-repeat"></i> Rotational
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <p class="small mb-0">Rotating schedule that changes periodically. Example: Morning shift week 1, Night shift week 2.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <div class="card border-secondary h-100">
+                                                    <div class="card-header bg-secondary text-white">
+                                                        <i class="bi bi-gear"></i> Custom
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <p class="small mb-0">Special or custom schedule for unique requirements. Example: On-call shifts, holiday shifts.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Info Box -->
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Note:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>The shift will be created with <strong>"Active"</strong> status</li>
+                                <li>After creating, you can assign this shift to employees or departments</li>
+                                <li>For split shifts, HR Admin can configure detailed split times</li>
+                                <li>For rotational shifts, HR Admin can create shift cycles</li>
+                            </ul>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle"></i> Create Shift
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-calculate duration when times change
+        document.addEventListener('DOMContentLoaded', function() {
+            const startTime = document.querySelector('input[name="StartTime"]');
+            const endTime = document.querySelector('input[name="EndTime"]');
+
+            function calculateDuration() {
+                if (startTime.value && endTime.value) {
+                    const start = new Date('2000-01-01 ' + startTime.value);
+                    let end = new Date('2000-01-01 ' + endTime.value);
+
+                    // Handle overnight shifts
+                    if (end < start) {
+                        end = new Date('2000-01-02 ' + endTime.value);
+                    }
+
+                    const diffMs = end - start;
+                    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+                    console.log(`Shift duration: ${diffHours}h ${diffMins}m`);
+                }
+            }
+
+            startTime.addEventListener('change', calculateDuration);
+            endTime.addEventListener('change', calculateDuration);
+        });
+    </script>
+}
+```
+

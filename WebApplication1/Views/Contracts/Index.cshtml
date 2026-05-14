@@ -1,0 +1,123 @@
+﻿@model IEnumerable<WebApplication1.Models.Contract>
+
+@{
+    ViewData["Title"] = "Contract Management";
+}
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-person-lines-fill text-primary"></i> Contract Management</h2>
+        <div>
+            <div class="btn-group me-2">
+                <a asp-action="Index" asp-route-filter="Active" class="btn @(ViewBag.CurrentFilter == "Active" ? "btn-secondary" : "btn-outline-secondary")">Active</a>
+                <a asp-action="Index" asp-route-filter="Expiring" class="btn @(ViewBag.CurrentFilter == "Expiring" ? "btn-warning" : "btn-outline-secondary")">Expiring Soon</a>
+                <a asp-action="Index" asp-route-filter="All" class="btn @(ViewBag.CurrentFilter == "All" ? "btn-secondary" : "btn-outline-secondary")">All</a>
+            </div>
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Create New Contract
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Employee</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    @if (item.Employees != null && item.Employees.Any())
+                                    {
+                                        var emp = item.Employees.FirstOrDefault();
+                                        <div class="fw-bold">@emp?.FullName</div>
+                                        <div class="small text-muted">ID: @emp?.EmployeeId</div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted fst-italic">Unassigned</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-info text-dark">@item.Type</span>
+                                </td>
+                                <td>
+                                    @if (item.CurrentState == "Active")
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else if (item.CurrentState == "Expired")
+                                    {
+                                        <span class="badge bg-danger">Expired</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">@item.CurrentState</span>
+                                    }
+                                </td>
+                                <td>@item.StartDate</td>
+                                <td>
+                                    @if (item.EndDate.HasValue)
+                                    {
+                                        @item.EndDate
+                                        // Highlight if expiring soon (e.g., within 30 days)
+                                        var daysLeft = item.EndDate.Value.DayNumber - DateOnly.FromDateTime(DateTime.Now).DayNumber;
+                                        if (daysLeft > 0 && daysLeft <= 30)
+                                        {
+                                            <span class="badge bg-warning text-dark ms-2">Expiring Soon</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Indefinite</span>
+                                    }
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="btn-group">
+                                        @if (item.Employees != null && item.Employees.Any())
+                                        {
+                                            <a asp-controller="Employees" asp-action="Details" asp-route-id="@item.Employees.FirstOrDefault()?.EmployeeId" class="btn btn-sm btn-outline-secondary" title="View Profile">
+                                                <i class="bi bi-person"></i>
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-sm btn-outline-secondary" disabled title="No Assigned Employee">
+                                                <i class="bi bi-person"></i>
+                                            </button>
+                                        }
+                                        <a asp-action="Edit" asp-route-id="@item.ContractId" class="btn btn-sm btn-outline-warning" title="Update Details">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a asp-action="Renew" asp-route-id="@item.ContractId" class="btn btn-sm btn-outline-success" title="Renew Contract">
+                                            <i class="bi bi-arrow-repeat"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

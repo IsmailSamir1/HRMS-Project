@@ -1,0 +1,140 @@
+﻿@{
+    ViewData["Title"] = "Create Leave Type";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-plus-circle text-success"></i> Create Leave Type</h2>
+                    <p class="text-muted mb-0">Add a new leave type to the system</p>
+                </div>
+                <div>
+                    <a asp-action="LeaveTypes" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Leave Types
+                    </a>
+                </div>
+            </div>
+
+            <!-- Form Card -->
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-tag"></i> Leave Type Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" asp-action="CreateLeaveType">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Leave Type Name -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-type"></i> Leave Type Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="LeaveTypeName" class="form-control form-control-lg"
+                                   placeholder="e.g., Annual Leave, Sick Leave, Maternity Leave" required />
+                            <div class="form-text">Enter a unique name for this leave type.</div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-text-paragraph"></i> Description
+                            </label>
+                            <textarea name="LeaveDescription" class="form-control" rows="3"
+                                      placeholder="Describe the leave type, eligibility criteria, and any special conditions..."></textarea>
+                            <div class="form-text">Optional description to help employees understand this leave type.</div>
+                        </div>
+
+                        <!-- Default Entitlement -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-calendar-range"></i> Default Entitlement (Days)
+                            </label>
+                            <input type="number" name="DefaultEntitlement" class="form-control"
+                                   value="0" min="0" max="365" />
+                            <div class="form-text">Default number of days to assign when this leave type is created.</div>
+                        </div>
+
+                        <!-- Assign to All Employees -->
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="AssignToAll" value="true" id="assignToAll">
+                                <label class="form-check-label fw-bold" for="assignToAll">
+                                    Assign to all active employees
+                                </label>
+                            </div>
+                            <div class="form-text">
+                                If checked, this leave type with the default entitlement will be automatically assigned to all active employees.
+                            </div>
+                        </div>
+
+                        <!-- Common Leave Types Quick Fill -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="bi bi-lightning"></i> Quick Fill - Common Leave Types</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-primary quick-fill"
+                                            data-name="Annual Leave" data-desc="Paid leave for personal time off and vacations." data-days="21">
+                                        Annual Leave
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-info quick-fill"
+                                            data-name="Sick Leave" data-desc="Paid leave for illness or medical appointments." data-days="14">
+                                        Sick Leave
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger quick-fill"
+                                            data-name="Maternity Leave" data-desc="Paid leave for mothers before and after childbirth." data-days="90">
+                                        Maternity Leave
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-success quick-fill"
+                                            data-name="Paternity Leave" data-desc="Paid leave for fathers after childbirth." data-days="14">
+                                        Paternity Leave
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-warning quick-fill"
+                                            data-name="Bereavement Leave" data-desc="Paid leave for death of immediate family member." data-days="5">
+                                        Bereavement
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary quick-fill"
+                                            data-name="Unpaid Leave" data-desc="Leave without pay for personal reasons." data-days="0">
+                                        Unpaid Leave
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-dark quick-fill"
+                                            data-name="Study Leave" data-desc="Leave for educational purposes and examinations." data-days="10">
+                                        Study Leave
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                            <a asp-action="LeaveTypes" class="btn btn-secondary btn-lg">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle"></i> Create Leave Type
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const quickFillBtns = document.querySelectorAll('.quick-fill');
+
+            quickFillBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelector('input[name="LeaveTypeName"]').value = this.dataset.name;
+                    document.querySelector('textarea[name="LeaveDescription"]').value = this.dataset.desc;
+                    document.querySelector('input[name="DefaultEntitlement"]').value = this.dataset.days;
+                });
+            });
+        });
+    </script>
+}

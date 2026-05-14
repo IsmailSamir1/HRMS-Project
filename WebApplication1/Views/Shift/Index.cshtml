@@ -1,0 +1,325 @@
+﻿@model List<WebApplication1.Models.ShiftSchedule>
+@{
+    ViewData["Title"] = "Shift Management";
+    bool isSystemAdmin = ViewBag.IsSystemAdmin == true;
+    bool isHRAdmin = ViewBag.IsHRAdmin == true;
+    bool isLineManager = ViewBag.IsLineManager == true;
+}
+
+<div class="container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-clock-history"></i> Shift Management</h2>
+            <p class="text-muted mb-0">Manage shift schedules and assignments</p>
+        </div>
+        <div>
+            @if (isSystemAdmin)
+            {
+                <a asp-action="Create" class="btn btn-success me-2">
+                    <i class="bi bi-plus-circle"></i> Create Shift
+                </a>
+            }
+            <a asp-action="Assignments" class="btn btn-primary me-2">
+                <i class="bi bi-person-check"></i> View Assignments
+            </a>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Actions Row -->
+    <div class="row mb-4">
+        @if (isSystemAdmin)
+        {
+            <div class="col-md-3 mb-3">
+                <div class="card bg-success text-white shadow h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-plus-circle display-4"></i>
+                        <h5 class="mt-2">Create Shift Type</h5>
+                        <p class="small mb-2">Add new shift schedules</p>
+                        <a asp-action="Create" class="btn btn-light btn-sm">
+                            <i class="bi bi-plus"></i> Create
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (isHRAdmin)
+        {
+            <div class="col-md-3 mb-3">
+                <div class="card bg-info text-white shadow h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-arrows-expand display-4"></i>
+                        <h5 class="mt-2">Split Shifts</h5>
+                        <p class="small mb-2">Configure split shift schedules</p>
+                        <a asp-action="ConfigureSplit" class="btn btn-light btn-sm">
+                            <i class="bi bi-gear"></i> Configure
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-warning text-dark shadow h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-arrow-repeat display-4"></i>
+                        <h5 class="mt-2">Rotational Shifts</h5>
+                        <p class="small mb-2">Configure shift cycles</p>
+                        <a asp-action="ConfigureRotational" class="btn btn-dark btn-sm">
+                            <i class="bi bi-gear"></i> Configure
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (isSystemAdmin || isLineManager)
+        {
+            <div class="col-md-3 mb-3">
+                <div class="card bg-primary text-white shadow h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-person-plus display-4"></i>
+                        <h5 class="mt-2">Assign Shift</h5>
+                        <p class="small mb-2">Assign shifts to employees</p>
+                        <a asp-action="Assign" class="btn btn-light btn-sm">
+                            <i class="bi bi-person-check"></i> Assign
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-secondary text-white shadow h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-building display-4"></i>
+                        <h5 class="mt-2">Department Shift</h5>
+                        <p class="small mb-2">Assign to entire department</p>
+                        <a asp-action="AssignDepartment" class="btn btn-light btn-sm">
+                            <i class="bi bi-people"></i> Assign
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card border-primary shadow">
+                <div class="card-body text-center">
+                    <i class="bi bi-clock display-4 text-primary"></i>
+                    <h2 class="mt-2 mb-0">@Model.Count</h2>
+                    <p class="text-muted mb-0">Total Shifts</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-success shadow">
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle display-4 text-success"></i>
+                    <h2 class="mt-2 mb-0">@Model.Count(s => s.Status == "Active")</h2>
+                    <p class="text-muted mb-0">Active Shifts</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-info shadow">
+                <div class="card-body text-center">
+                    <i class="bi bi-arrows-expand display-4 text-info"></i>
+                    <h2 class="mt-2 mb-0">@Model.Count(s => s.Type == "Split")</h2>
+                    <p class="text-muted mb-0">Split Shifts</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-warning shadow">
+                <div class="card-body text-center">
+                    <i class="bi bi-arrow-repeat display-4 text-warning"></i>
+                    <h2 class="mt-2 mb-0">@Model.Count(s => s.Type == "Rotational")</h2>
+                    <p class="text-muted mb-0">Rotational Shifts</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shifts Table -->
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-list-ul"></i> All Shifts</h5>
+            <span class="badge bg-light text-dark fs-6">@Model.Count shifts</span>
+        </div>
+        <div class="card-body p-0">
+            @if (Model == null || Model.Count == 0)
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                    <h5 class="mt-3 text-muted">No Shifts Found</h5>
+                    <p class="text-muted">
+                        @if (isSystemAdmin)
+                        {
+                            <text>Click "Create Shift" to add the first shift.</text>
+                        }
+                        else
+                        {
+                            <text>No shifts have been created yet.</text>
+                        }
+                    </p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                                <th>Break (min)</th>
+                                <th>Status</th>
+                                <th>Assigned</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var shift in Model)
+                            {
+                                <tr>
+                                    <td>@shift.ShiftId</td>
+                                    <td>
+                                        <i class="bi bi-clock me-1"></i>
+                                        <strong>@shift.Name</strong>
+                                    </td>
+                                    <td>
+                                        @if (shift.Type == "Normal")
+                                        {
+                                            <span class="badge bg-primary">
+                                                <i class="bi bi-clock"></i> Normal
+                                            </span>
+                                        }
+                                        else if (shift.Type == "Split")
+                                        {
+                                            <span class="badge bg-info">
+                                                <i class="bi bi-arrows-expand"></i> Split
+                                            </span>
+                                        }
+                                        else if (shift.Type == "Rotational")
+                                        {
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-arrow-repeat"></i> Rotational
+                                            </span>
+                                        }
+                                        else if (shift.Type == "Custom")
+                                        {
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-gear"></i> Custom
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">@shift.Type</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (shift.StartTime.HasValue)
+                                        {
+                                            <i class="bi bi-sunrise text-warning me-1"></i>
+                                            @shift.StartTime.Value.ToString("hh:mm tt")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">N/A</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (shift.EndTime.HasValue)
+                                        {
+                                            <i class="bi bi-sunset text-danger me-1"></i>
+                                            @shift.EndTime.Value.ToString("hh:mm tt")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">N/A</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (shift.BreakDuration.HasValue && shift.BreakDuration > 0)
+                                        {
+                                            <span class="badge bg-light text-dark">
+                                                <i class="bi bi-cup-hot me-1"></i>@shift.BreakDuration min
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (shift.Status == "Active")
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle"></i> Active
+                                            </span>
+                                        }
+                                        else if (shift.Status == "Inactive")
+                                        {
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-x-circle"></i> Inactive
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">@shift.Status</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">
+                                            @shift.ShiftAssignments.Count employees
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a asp-action="Details" asp-route-id="@shift.ShiftId" class="btn btn-sm btn-info" title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        @if (isSystemAdmin)
+                                        {
+                                            <a asp-action="Edit" asp-route-id="@shift.ShiftId" class="btn btn-sm btn-warning" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a asp-action="Delete" asp-route-id="@shift.ShiftId" class="btn btn-sm btn-danger" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        }
+
+                                        @if (isSystemAdmin || isLineManager)
+                                        {
+                                            <a asp-action="Assign" asp-route-shiftId="@shift.ShiftId" class="btn btn-sm btn-success" title="Assign to Employee">
+                                                <i class="bi bi-person-plus"></i>
+                                            </a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- My Shifts Link for Regular Employees -->
+    <div class="card mt-4 shadow">
+        <div class="card-body text-center">
+            <a asp-action="MyShifts" class="btn btn-outline-primary btn-lg">
+                <i class="bi bi-calendar-check"></i> View My Shift Schedule
+            </a>
+        </div>
+    </div>
+</div>
+```
+

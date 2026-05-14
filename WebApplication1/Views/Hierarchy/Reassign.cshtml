@@ -1,0 +1,201 @@
+﻿@model WebApplication1.Models.Employee
+@{
+    ViewData["Title"] = "Reassign Employee";
+    var departments = ViewBag.Departments as List<WebApplication1.Models.Department>;
+    var managers = ViewBag.Managers as List<WebApplication1.Models.Employee>;
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="bi bi-arrow-left-right"></i> Reassign Employee
+                    </h4>
+                    <small>Update department and manager assignments</small>
+                </div>
+                <div class="card-body">
+                    <!-- Info Box -->
+                    <div class="alert alert-info mb-4">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Stored Procedure Used:</strong> <code>ReassignHierarchy</code> -
+                        Updates employee's department and manager assignments in the organizational hierarchy.
+                    </div>
+
+                    <!-- Current Employee Info -->
+                    <div class="card mb-4 border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="bi bi-person"></i> Employee Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong>Name:</strong>
+                                        <span class="badge bg-primary">@Model.FullName</span>
+                                    </p>
+                                    <p class="mb-2">
+                                        <strong>Email:</strong> @Model.Email
+                                    </p>
+                                    <p class="mb-2">
+                                        <strong>Phone:</strong> @Model.Phone
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong>Current Department:</strong>
+                                        @if (Model.Department != null)
+                                        {
+                                            <span class="badge bg-info">@Model.Department.DepartmentName</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Not Assigned</span>
+                                        }
+                                    </p>
+                                    <p class="mb-2">
+                                        <strong>Current Position:</strong>
+                                        @if (Model.Position != null)
+                                        {
+                                            <span class="badge bg-secondary">@Model.Position.PositionTitle</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Not Assigned</span>
+                                        }
+                                    </p>
+                                    <p class="mb-2">
+                                        <strong>Current Manager:</strong>
+                                        @if (Model.Manager != null)
+                                        {
+                                            <span class="badge bg-success">@Model.Manager.FullName</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">No Manager</span>
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reassignment Form -->
+                    <form method="post" asp-action="Reassign">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="EmployeeId" value="@Model.EmployeeId" />
+
+                        <h5 class="mb-3 text-warning">
+                            <i class="bi bi-pencil"></i> New Assignments
+                        </h5>
+
+                        <!-- New Department -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-building"></i> New Department
+                            </label>
+                            <select name="NewDepartmentId" class="form-select">
+                                <option value="">-- Keep Current Department --</option>
+                                @if (departments != null)
+                                {
+                                    @foreach (var dept in departments)
+                                    {
+                                        if (Model.DepartmentId == dept.DepartmentId)
+                                        {
+                                            <option value="@dept.DepartmentId" selected>@dept.DepartmentName (Current)</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@dept.DepartmentId">@dept.DepartmentName</option>
+                                        }
+                                    }
+                                }
+                            </select>
+                            <small class="text-muted">Select a new department or keep the current one</small>
+                        </div>
+
+                        <!-- New Manager -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-person-badge"></i> New Manager
+                            </label>
+                            <select name="NewManagerId" class="form-select">
+                                <option value="">-- No Manager (Top Level) --</option>
+                                @if (managers != null)
+                                {
+                                    @foreach (var mgr in managers)
+                                    {
+                                        string deptInfo = mgr.Department != null ? $" - {mgr.Department.DepartmentName}" : "";
+                                        string posInfo = mgr.Position != null ? $" ({mgr.Position.PositionTitle})" : "";
+
+                                        if (Model.ManagerId == mgr.EmployeeId)
+                                        {
+                                            <option value="@mgr.EmployeeId" selected>
+                                                @mgr.FullName@posInfo@deptInfo (Current)
+                                            </option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@mgr.EmployeeId">
+                                                @mgr.FullName@posInfo@deptInfo
+                                            </option>
+                                        }
+                                    }
+                                }
+                            </select>
+                            <small class="text-muted">Select a new manager or leave as top-level employee</small>
+                        </div>
+
+                        <!-- Warning Box -->
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Important:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Reassigning this employee will update the organizational hierarchy</li>
+                                <li>If this employee manages others, their team structure will remain intact</li>
+                                <li>Changes take effect immediately</li>
+                            </ul>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-warning btn-lg">
+                                <i class="bi bi-check-circle"></i> Reassign Employee
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Additional Info -->
+            <div class="card shadow mt-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Reassignment Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Best Practices:</h6>
+                    <ul>
+                        <li><strong>Department Assignment:</strong> Ensure the employee's position aligns with the new department's purpose</li>
+                        <li><strong>Manager Assignment:</strong> The new manager should be from the same or a related department</li>
+                        <li><strong>Hierarchy Levels:</strong> Avoid circular reporting structures (employee reporting to their subordinate)</li>
+                        <li><strong>Communication:</strong> Notify affected parties after reassignment</li>
+                    </ul>
+
+                    <h6 class="mt-3">After Reassignment:</h6>
+                    <ul class="mb-0">
+                        <li>Employee will appear under the new department in reports</li>
+                        <li>New manager will see this employee in their team view</li>
+                        <li>Previous manager will no longer see this employee in their team</li>
+                        <li>Organizational hierarchy charts will be updated automatically</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+```
+

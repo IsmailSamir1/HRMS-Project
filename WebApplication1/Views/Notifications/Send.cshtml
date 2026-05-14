@@ -1,0 +1,198 @@
+﻿@{
+    ViewData["Title"] = "Send Notification to Team";
+    var teamMembers = ViewBag.TeamMembers as List<WebApplication1.Models.Employee>;
+    int teamCount = teamMembers?.Count ?? 0;
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-send"></i> Send Notification to Team
+                    </h4>
+                    <small>Send customized notifications to your team members</small>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> @ViewBag.Error
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (teamCount == 0)
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-people display-1 text-muted"></i>
+                            <h5 class="mt-3 text-muted">No Team Members Found</h5>
+                            <p class="text-muted">You don't have any employees reporting to you.</p>
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Notifications
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <form method="post" asp-action="Send">
+                            @Html.AntiForgeryToken()
+
+                            <!-- Message Content -->
+                            <div class="mb-3">
+                                <label class="form-label">Message <span class="text-danger">*</span></label>
+                                <textarea name="MessageContent" class="form-control" rows="4"
+                                      placeholder="Enter your notification message here..." required></textarea>
+                            </div>
+
+                            <!-- Notification Type -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Notification Type</label>
+                                    <select name="NotificationType" class="form-select">
+                                        <option value="TeamMessage" selected>Team Message</option>
+                                        <option value="Shift">Shift Update</option>
+                                        <option value="Mission">Mission Update</option>
+                                        <option value="Leave">Leave Related</option>
+                                        <option value="Policy">Policy Update</option>
+                                        <option value="Reminder">Reminder</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Urgency Level</label>
+                                    <select name="Urgency" class="form-select">
+                                        <option value="Low">Low</option>
+                                        <option value="Normal" selected>Normal</option>
+                                        <option value="High">High (Urgent)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Recipients -->
+                            <div class="mb-3">
+                                <label class="form-label">Recipients</label>
+
+                                <!-- Send to All Option -->
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" name="SendToAll"
+                                           value="true" id="sendToAll" onchange="toggleTeamList()">
+                                    <label class="form-check-label fw-bold" for="sendToAll">
+                                        <i class="bi bi-people-fill"></i> Send to All Team Members (@teamCount members)
+                                    </label>
+                                </div>
+
+                                <!-- Individual Selection -->
+                                <div id="teamMembersList" class="card">
+                                    <div class="card-header bg-light py-2">
+                                        <small class="fw-bold">Or select specific team members:</small>
+                                    </div>
+                                    <div class="card-body" style="max-height: 250px; overflow-y: auto;">
+                                        @if (teamMembers != null)
+                                        {
+                                            @foreach (var member in teamMembers)
+                                            {
+                                                <div class="form-check">
+                                                    <input class="form-check-input team-member-checkbox"
+                                                           type="checkbox"
+                                                           name="SelectedEmployees"
+                                                           value="@member.EmployeeId"
+                                                           id="emp_@member.EmployeeId">
+                                                    <label class="form-check-label" for="emp_@member.EmployeeId">
+                                                        <i class="bi bi-person me-1"></i>
+                                                        @member.FullName
+                                                        @if (!string.IsNullOrEmpty(member.Email))
+                                                        {
+                                                            <small class="text-muted">(@member.Email)</small>
+                                                        }
+                                                    </label>
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+                                    <div class="card-footer bg-light py-2">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="selectAllMembers()">
+                                            Select All
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deselectAllMembers()">
+                                            Deselect All
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Buttons -->
+                            <div class="d-flex justify-content-between mt-4">
+                                <a asp-action="Index" class="btn btn-secondary">
+                                    <i class="bi bi-arrow-left"></i> Back to Notifications
+                                </a>
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="bi bi-send"></i> Send Notification
+                                </button>
+                            </div>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Card -->
+@if (teamCount > 0)
+{
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-8">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <i class="bi bi-info-circle"></i> Tips for Effective Notifications
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Keep messages clear and concise</li>
+                        <li>Use <strong>High</strong> urgency only for time-sensitive matters</li>
+                        <li>Select the appropriate notification type for better organization</li>
+                        <li>Team members will see this notification when they log in</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<script>
+    function toggleTeamList() {
+        var sendToAll = document.getElementById('sendToAll');
+        var teamList = document.getElementById('teamMembersList');
+        var checkboxes = document.querySelectorAll('.team-member-checkbox');
+
+        if (sendToAll.checked) {
+            teamList.style.opacity = '0.5';
+            teamList.style.pointerEvents = 'none';
+            checkboxes.forEach(function(cb) {
+                cb.checked = false;
+            });
+        } else {
+            teamList.style.opacity = '1';
+            teamList.style.pointerEvents = 'auto';
+        }
+    }
+
+    function selectAllMembers() {
+        var checkboxes = document.querySelectorAll('.team-member-checkbox');
+        checkboxes.forEach(function(cb) {
+            cb.checked = true;
+        });
+        document.getElementById('sendToAll').checked = false;
+        toggleTeamList();
+    }
+
+    function deselectAllMembers() {
+        var checkboxes = document.querySelectorAll('.team-member-checkbox');
+        checkboxes.forEach(function(cb) {
+            cb.checked = false;
+        });
+    }
+</script>
+```
+

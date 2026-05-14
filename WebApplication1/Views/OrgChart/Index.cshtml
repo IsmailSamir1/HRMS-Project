@@ -1,0 +1,603 @@
+﻿@{
+    ViewData["Title"] = "Organization Chart";
+    var departments = ViewBag.Departments as List<WebApplication1.Models.Department>;
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-diagram-3 text-primary me-2"></i>Organization Chart
+            </h2>
+            <p class="text-muted mb-0">Interactive view of company hierarchy</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-controller="Hierarchy" asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-list me-1"></i> List View
+            </a>
+            <button id="exportChart" class="btn btn-outline-primary">
+                <i class="bi bi-download me-1"></i> Export
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">@ViewBag.TotalEmployees</h3>
+                        <small>Total Employees</small>
+                    </div>
+                    <i class="bi bi-people fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">@ViewBag.TotalDepartments</h3>
+                        <small>Departments</small>
+                    </div>
+                    <i class="bi bi-building fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">@ViewBag.TotalManagers</h3>
+                        <small>Managers</small>
+                    </div>
+                    <i class="bi bi-person-badge fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body py-3">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Filter by Department</label>
+                    <select id="departmentFilter" class="form-select">
+                        <option value="">All Departments</option>
+                        @foreach (var dept in departments)
+                        {
+                            <option value="@dept.DepartmentId">@dept.DepartmentName</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Search Employee</label>
+                    <div class="position-relative">
+                        <input type="text" id="searchEmployee" class="form-control" placeholder="Search by name...">
+                        <div id="searchResults" class="position-absolute w-100 bg-white shadow rounded mt-1" style="display: none; z-index: 1000; max-height: 250px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="btn-group w-100">
+                        <button id="zoomIn" class="btn btn-outline-secondary"><i class="bi bi-zoom-in"></i></button>
+                        <button id="zoomOut" class="btn btn-outline-secondary"><i class="bi bi-zoom-out"></i></button>
+                        <button id="resetZoom" class="btn btn-outline-secondary"><i class="bi bi-arrows-fullscreen"></i> Reset</button>
+                        <button id="toggleCompact" class="btn btn-outline-primary"><i class="bi bi-grid"></i> Compact</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="d-flex flex-wrap gap-3 mb-4">
+        <div class="d-flex align-items-center">
+            <span class="badge me-2" style="background: #e74c3c; width: 20px; height: 20px;"></span>
+            <small>System Admin</small>
+        </div>
+        <div class="d-flex align-items-center">
+            <span class="badge me-2" style="background: #f39c12; width: 20px; height: 20px;"></span>
+            <small>HR Admin</small>
+        </div>
+        <div class="d-flex align-items-center">
+            <span class="badge me-2" style="background: #3498db; width: 20px; height: 20px;"></span>
+            <small>Manager</small>
+        </div>
+        <div class="d-flex align-items-center">
+            <span class="badge me-2" style="background: #667eea; width: 20px; height: 20px;"></span>
+            <small>Employee</small>
+        </div>
+    </div>
+
+    <!-- Org Chart Container -->
+    <div class="card shadow">
+        <div class="card-body p-0" style="overflow: auto;">
+            <div id="orgChart" style="min-height: 600px; width: 100%;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Employee Detail Modal -->
+<div class="modal fade" id="employeeModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-person-circle me-2"></i>Employee Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="employeeModalBody">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="#" id="viewProfileBtn" class="btn btn-primary">View Full Profile</a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        /* Org Chart Styles */
+        .orgchart-container {
+            overflow: auto;
+            padding: 20px;
+        }
+
+        .org-node {
+            display: inline-block;
+            padding: 15px 20px;
+            border-radius: 12px;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 180px;
+            text-align: center;
+            position: relative;
+            border-top: 4px solid #667eea;
+        }
+
+            .org-node:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            }
+
+            .org-node.highlighted {
+                animation: pulse 1s infinite;
+                box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+            }
+
+        @@keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .org-node-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-size: 1.5rem;
+            color: white;
+            font-weight: bold;
+        }
+
+        .org-node-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+            color: #333;
+        }
+
+        .org-node-title {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .org-node-dept {
+            font-size: 0.75rem;
+            color: #999;
+        }
+
+        .org-node-team {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .org-tree {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+            .org-tree ul {
+                display: flex;
+                justify-content: center;
+                padding: 20px 0 0 0;
+                margin: 0;
+                list-style: none;
+                position: relative;
+            }
+
+                .org-tree ul::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 50%;
+                    border-left: 2px solid #ddd;
+                    height: 20px;
+                }
+
+            .org-tree li {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 0 20px;
+                position: relative;
+            }
+
+                .org-tree li::before,
+                .org-tree li::after {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    border-top: 2px solid #ddd;
+                    width: 50%;
+                    height: 20px;
+                }
+
+                .org-tree li::before {
+                    right: 50%;
+                    border-right: 2px solid #ddd;
+                }
+
+                .org-tree li::after {
+                    left: 50%;
+                }
+
+                .org-tree li:only-child::before,
+                .org-tree li:only-child::after {
+                    display: none;
+                }
+
+                .org-tree li:only-child {
+                    padding-top: 0;
+                }
+
+                .org-tree li:first-child::before,
+                .org-tree li:last-child::after {
+                    border: none;
+                }
+
+                .org-tree li:last-child::before {
+                    border-radius: 0 5px 0 0;
+                }
+
+                .org-tree li:first-child::after {
+                    border-radius: 5px 0 0 0;
+                }
+
+        /* Compact Mode */
+        .compact .org-node {
+            min-width: 120px;
+            padding: 10px;
+        }
+
+        .compact .org-node-avatar {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+
+        .compact .org-node-name {
+            font-size: 0.8rem;
+        }
+
+        .compact .org-node-title,
+        .compact .org-node-dept {
+            display: none;
+        }
+
+        /* Dark Mode */
+        body.dark-mode .org-node {
+            background: #1f2937;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        body.dark-mode .org-node-name {
+            color: #e4e4e4;
+        }
+
+        body.dark-mode .org-node-title {
+            color: #9ca3af;
+        }
+
+        body.dark-mode .org-tree li::before,
+        body.dark-mode .org-tree li::after,
+        body.dark-mode .org-tree ul::before {
+            border-color: #374151;
+        }
+
+        /* Search Results */
+        #searchResults .search-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+
+            #searchResults .search-item:hover {
+                background: #f8f9fa;
+            }
+
+        body.dark-mode #searchResults {
+            background: #1f2937;
+        }
+
+            body.dark-mode #searchResults .search-item {
+                border-color: #374151;
+                color: #e4e4e4;
+            }
+
+                body.dark-mode #searchResults .search-item:hover {
+                    background: #374151;
+                }
+    </style>
+
+    <script>
+        let chartData = [];
+        let currentScale = 1;
+        let isCompact = false;
+        let highlightedNode = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadChartData();
+
+            // Department filter
+            document.getElementById('departmentFilter').addEventListener('change', function() {
+                loadChartData(this.value || null);
+            });
+
+            // Search functionality
+            let searchTimeout;
+            document.getElementById('searchEmployee').addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                const query = this.value.trim();
+
+                if (query.length < 2) {
+                    document.getElementById('searchResults').style.display = 'none';
+                    return;
+                }
+
+                searchTimeout = setTimeout(() => {
+                    fetch('/OrgChart/Search?query=' + encodeURIComponent(query))
+                        .then(r => r.json())
+                        .then(results => {
+                            const container = document.getElementById('searchResults');
+                            if (results.length === 0) {
+                                container.innerHTML = '<div class="p-3 text-muted">No results found</div>';
+                            } else {
+                                container.innerHTML = results.map(r => `
+                                    <div class="search-item" onclick="highlightEmployee(${r.id})">
+                                        <strong>${r.name}</strong>
+                                        <small class="d-block text-muted">${r.position || 'Employee'} - ${r.department || 'N/A'}</small>
+                                    </div>
+                                `).join('');
+                            }
+                            container.style.display = 'block';
+                        });
+                }, 300);
+            });
+
+            // Hide search results on click outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#searchEmployee') && !e.target.closest('#searchResults')) {
+                    document.getElementById('searchResults').style.display = 'none';
+                }
+            });
+
+            // Zoom controls
+            document.getElementById('zoomIn').addEventListener('click', () => zoom(0.1));
+            document.getElementById('zoomOut').addEventListener('click', () => zoom(-0.1));
+            document.getElementById('resetZoom').addEventListener('click', () => {
+                currentScale = 1;
+                applyZoom();
+            });
+
+            // Compact toggle
+            document.getElementById('toggleCompact').addEventListener('click', function() {
+                isCompact = !isCompact;
+                document.getElementById('orgChart').classList.toggle('compact', isCompact);
+                this.innerHTML = isCompact
+                    ? '<i class="bi bi-grid-3x3-gap"></i> Expand'
+                    : '<i class="bi bi-grid"></i> Compact';
+            });
+
+            // Export
+            document.getElementById('exportChart').addEventListener('click', exportChart);
+        });
+
+        function loadChartData(departmentId = null) {
+            const container = document.getElementById('orgChart');
+            container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-2">Loading organization chart...</p></div>';
+
+            let url = '/OrgChart/GetChartData';
+            if (departmentId) url += '?departmentId=' + departmentId;
+
+            fetch(url)
+                .then(r => r.json())
+                .then(data => {
+                    chartData = data;
+                    renderChart(data);
+                })
+                .catch(err => {
+                    container.innerHTML = '<div class="alert alert-danger m-4">Error loading chart data.</div>';
+                });
+        }
+
+        function renderChart(nodes) {
+            const container = document.getElementById('orgChart');
+
+            if (!nodes || nodes.length === 0) {
+                container.innerHTML = '<div class="text-center py-5 text-muted"><i class="bi bi-diagram-3 fs-1"></i><p>No employees found</p></div>';
+                return;
+            }
+
+            let html = '<div class="org-tree p-4" id="chartContent">';
+
+            nodes.forEach(node => {
+                html += renderNode(node);
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function renderNode(node) {
+            const initial = node.name ? node.name.charAt(0).toUpperCase() : '?';
+            const teamBadge = node.teamSize > 0 ? `<span class="org-node-team">${node.teamSize}</span>` : '';
+
+            let html = `
+                <div class="org-node" id="node-${node.id}" style="border-top-color: ${node.color};" onclick="showEmployeeDetails(${node.id})">
+                    ${teamBadge}
+                    <div class="org-node-avatar" style="background: ${node.color};">${initial}</div>
+                    <div class="org-node-name">${node.name}</div>
+                    <div class="org-node-title">${node.title}</div>
+                    <div class="org-node-dept">${node.department}</div>
+                </div>
+            `;
+
+            if (node.children && node.children.length > 0) {
+                html += '<ul>';
+                node.children.forEach(child => {
+                    html += '<li>' + renderNode(child) + '</li>';
+                });
+                html += '</ul>';
+            }
+
+            return html;
+        }
+
+        function showEmployeeDetails(employeeId) {
+            const modal = new bootstrap.Modal(document.getElementById('employeeModal'));
+            const modalBody = document.getElementById('employeeModalBody');
+
+            modalBody.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+            modal.show();
+
+            fetch('/OrgChart/GetEmployeeCard?id=' + employeeId)
+                .then(r => r.json())
+                .then(data => {
+                    const rolesHtml = data.roles && data.roles.length > 0
+                        ? data.roles.map(r => `<span class="badge bg-secondary me-1">${r}</span>`).join('')
+                        : '<span class="text-muted">Standard Employee</span>';
+
+                    modalBody.innerHTML = `
+                        <div class="text-center mb-4">
+                            <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                                <span class="text-primary fw-bold" style="font-size: 2rem;">${data.name ? data.name.charAt(0) : '?'}</span>
+                            </div>
+                            <h4 class="mb-1">${data.name}</h4>
+                            <p class="text-muted mb-2">${data.position || 'Employee'}</p>
+                            <div>${rolesHtml}</div>
+                        </div>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td class="text-muted"><i class="bi bi-building me-2"></i>Department</td>
+                                <td class="fw-semibold">${data.department || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted"><i class="bi bi-person me-2"></i>Reports To</td>
+                                <td class="fw-semibold">${data.manager || 'None'}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted"><i class="bi bi-people me-2"></i>Team Size</td>
+                                <td class="fw-semibold">${data.teamSize} direct report(s)</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted"><i class="bi bi-envelope me-2"></i>Email</td>
+                                <td><a href="mailto:${data.email}">${data.email || 'N/A'}</a></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted"><i class="bi bi-telephone me-2"></i>Phone</td>
+                                <td>${data.phone || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted"><i class="bi bi-calendar me-2"></i>Hire Date</td>
+                                <td>${data.hireDate || 'N/A'}</td>
+                            </tr>
+                        </table>
+                    `;
+
+                    document.getElementById('viewProfileBtn').href = '/Employees/Details/' + data.id;
+                })
+                .catch(err => {
+                    modalBody.innerHTML = '<div class="alert alert-danger">Error loading employee details.</div>';
+                });
+        }
+
+        function highlightEmployee(employeeId) {
+            document.getElementById('searchResults').style.display = 'none';
+            document.getElementById('searchEmployee').value = '';
+
+            // Remove previous highlight
+            if (highlightedNode) {
+                highlightedNode.classList.remove('highlighted');
+            }
+
+            // Find and highlight node
+            const node = document.getElementById('node-' + employeeId);
+            if (node) {
+                node.classList.add('highlighted');
+                highlightedNode = node;
+                node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                // Show details
+                setTimeout(() => showEmployeeDetails(employeeId), 500);
+            }
+        }
+
+        function zoom(delta) {
+            currentScale = Math.max(0.5, Math.min(1.5, currentScale + delta));
+            applyZoom();
+        }
+
+        function applyZoom() {
+            const content = document.getElementById('chartContent');
+            if (content) {
+                content.style.transform = `scale(${currentScale})`;
+                content.style.transformOrigin = 'top center';
+            }
+        }
+
+        function exportChart() {
+            // Simple export - just prints the chart
+            window.print();
+        }
+    </script>
+}

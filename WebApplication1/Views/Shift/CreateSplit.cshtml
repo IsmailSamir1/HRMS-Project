@@ -1,0 +1,162 @@
+﻿@{
+    ViewData["Title"] = "Create Split Shift";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-arrows-expand"></i> Create Split Shift
+                    </h4>
+                    <small>HR Admin - Configure a new split shift schedule</small>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> @ViewBag.Error
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <!-- Info Box -->
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Split Shift:</strong> A split shift divides the workday into two separate periods with a long break in between.
+                    </div>
+
+                    <form method="post" asp-action="CreateSplit">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Shift Name -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="bi bi-tag"></i> Shift Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="Name" class="form-control" placeholder="e.g., Restaurant Split Shift, Retail Split" required />
+                            <small class="text-muted">Enter a descriptive name for this split shift</small>
+                        </div>
+
+                        <!-- First Work Period -->
+                        <div class="card mb-4 border-success">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0"><i class="bi bi-1-circle"></i> First Work Period (Morning)</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="bi bi-sunrise"></i> Start Time <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="time" name="StartTime1" class="form-control" value="08:00" required />
+                                        <small class="text-muted">When does the first period start?</small>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="bi bi-clock"></i> End Time <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="time" name="EndTime1" class="form-control" value="12:00" required />
+                                        <small class="text-muted">When does the first period end?</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Break Period Indicator -->
+                        <div class="text-center mb-4">
+                            <div class="d-inline-block bg-warning text-dark px-4 py-2 rounded">
+                                <i class="bi bi-cup-hot me-2"></i>
+                                <strong>Long Break Period</strong>
+                                <i class="bi bi-cup-hot ms-2"></i>
+                            </div>
+                        </div>
+
+                        <!-- Second Work Period -->
+                        <div class="card mb-4 border-danger">
+                            <div class="card-header bg-danger text-white">
+                                <h6 class="mb-0"><i class="bi bi-2-circle"></i> Second Work Period (Evening)</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="bi bi-clock"></i> Start Time <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="time" name="StartTime2" class="form-control" value="16:00" required />
+                                        <small class="text-muted">When does the second period start?</small>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="bi bi-sunset"></i> End Time <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="time" name="EndTime2" class="form-control" value="20:00" required />
+                                        <small class="text-muted">When does the second period end?</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Break -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="bi bi-cup-hot"></i> Additional Break During Work Periods (minutes)
+                            </label>
+                            <input type="number" name="BreakDuration" class="form-control" value="0" min="0" max="120" />
+                            <small class="text-muted">Optional: Additional short breaks during each work period</small>
+                        </div>
+
+                        <!-- Preview -->
+                        <div class="card mb-4 border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="bi bi-eye"></i> Shift Preview</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-md-3">
+                                        <div class="border rounded p-3 bg-success text-white">
+                                            <i class="bi bi-sunrise display-6"></i>
+                                            <p class="mb-0 mt-2"><strong>First Period</strong></p>
+                                            <small>8:00 AM - 12:00 PM</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-center justify-content-center">
+                                        <i class="bi bi-arrow-right display-6 text-muted"></i>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="border rounded p-3 bg-warning text-dark">
+                                            <i class="bi bi-cup-hot display-6"></i>
+                                            <p class="mb-0 mt-2"><strong>Break</strong></p>
+                                            <small>4 hours</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-center justify-content-center">
+                                        <i class="bi bi-arrow-right display-6 text-muted"></i>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="border rounded p-3 bg-danger text-white">
+                                            <i class="bi bi-sunset display-6"></i>
+                                            <p class="mb-0 mt-2"><strong>Second Period</strong></p>
+                                            <small>4:00 PM - 8:00 PM</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="ConfigureSplit" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-info btn-lg">
+                                <i class="bi bi-check-circle"></i> Create Split Shift
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

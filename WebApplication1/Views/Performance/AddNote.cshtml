@@ -1,0 +1,103 @@
+﻿@{
+    ViewData["Title"] = "Add Performance Note";
+    var employee = ViewBag.Employee as WebApplication1.Models.Employee;
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1"><i class="bi bi-chat-plus text-primary me-2"></i>Add Performance Note</h2>
+                    <p class="text-muted mb-0">Add feedback or notes for @employee?.FullName</p>
+                </div>
+                <a asp-action="EmployeePerformance" asp-route-id="@employee?.EmployeeId" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back
+                </a>
+            </div>
+
+            <!-- Employee Info -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
+                            <span class="text-white fw-bold fs-4">@employee?.FullName?.Substring(0, 1)</span>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">@employee?.FullName</h5>
+                            <p class="text-muted mb-0">
+                                @employee?.Department?.DepartmentName
+                                @if (employee?.Position != null)
+                                {
+                                    <span class="mx-2">·</span>
+                                    @employee.Position.PositionTitle
+                                }
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Note Form -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-0">
+                    <h5 class="mb-0"><i class="bi bi-pencil me-2"></i>Write Your Note</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="AddNote" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="employeeId" value="@employee?.EmployeeId" />
+
+                        <div class="mb-4">
+                            <label class="form-label">Note Content <span class="text-danger">*</span></label>
+                            <textarea name="noteContent" class="form-control" rows="6" required
+                                      placeholder="Enter your feedback, observations, or notes about this employee's performance..."></textarea>
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                This note will be visible to HR administrators and the employee.
+                            </small>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6 class="text-muted mb-3">Quick Templates:</h6>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-success template-btn" data-template="Excellent performance this period. Keep up the great work!">
+                                    <i class="bi bi-star me-1"></i> Positive Feedback
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-info template-btn" data-template="Good progress on assigned tasks. Consider focusing on improving communication skills.">
+                                    <i class="bi bi-graph-up me-1"></i> Progress Note
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-warning template-btn" data-template="Areas for improvement identified. Recommend additional training in the following areas: ">
+                                    <i class="bi bi-lightbulb me-1"></i> Improvement Needed
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary template-btn" data-template="Goal achieved: Successfully completed the project ahead of schedule.">
+                                    <i class="bi bi-trophy me-1"></i> Goal Achievement
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-action="EmployeePerformance" asp-route-id="@employee?.EmployeeId" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i> Save Note
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.template-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelector('textarea[name="noteContent"]').value = this.dataset.template;
+            });
+        });
+    </script>
+}

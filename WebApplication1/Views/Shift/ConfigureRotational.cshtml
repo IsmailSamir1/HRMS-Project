@@ -1,0 +1,168 @@
+﻿@model List<WebApplication1.Models.ShiftCycle>
+@{
+    ViewData["Title"] = "Configure Rotational Shifts";
+}
+
+<div class="container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-arrow-repeat"></i> Configure Rotational Shifts</h2>
+            <p class="text-muted mb-0">HR Admin - Manage shift cycles and rotations</p>
+        </div>
+        <div>
+            <a asp-action="CreateCycle" class="btn btn-success me-2">
+                <i class="bi bi-plus-circle"></i> Create Shift Cycle
+            </a>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Shifts
+            </a>
+        </div>
+    </div>
+
+    <!-- Info Card -->
+    <div class="card shadow mb-4 border-warning">
+        <div class="card-header bg-warning text-dark">
+            <h6 class="mb-0"><i class="bi bi-info-circle"></i> What are Rotational Shifts?</h6>
+        </div>
+        <div class="card-body">
+            <p class="mb-0">
+                <strong>Rotational shifts</strong> (also called rotating shifts) cycle employees through different shift times on a regular schedule.
+                For example, an employee might work <strong>morning shifts for one week</strong>, then <strong>afternoon shifts the next week</strong>, then <strong>night shifts</strong>.
+                This ensures fair distribution of less desirable shift times among all employees.
+            </p>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card border-warning shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-arrow-repeat display-4 text-warning"></i>
+                    <h2 class="mt-2 mb-0">@Model.Count</h2>
+                    <p class="text-muted mb-0">Total Shift Cycles</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card border-primary shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-clock display-4 text-primary"></i>
+                    <h2 class="mt-2 mb-0">@Model.Sum(c => c.ShiftCycleAssignments.Count)</h2>
+                    <p class="text-muted mb-0">Total Shifts in Cycles</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shift Cycles -->
+    <div class="card shadow">
+        <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-list-ul"></i> Shift Cycles</h5>
+            <span class="badge bg-dark fs-6">@Model.Count cycles</span>
+        </div>
+        <div class="card-body p-0">
+            @if (Model == null || Model.Count == 0)
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-arrow-repeat display-1 text-muted"></i>
+                    <h5 class="mt-3 text-muted">No Shift Cycles Found</h5>
+                    <p class="text-muted">Click "Create Shift Cycle" to add the first rotational shift cycle.</p>
+                    <a asp-action="CreateCycle" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i> Create Shift Cycle
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="accordion" id="cyclesAccordion">
+                    @foreach (var cycle in Model)
+                    {
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#cycle_@cycle.CycleId">
+                                    <span class="me-3">
+                                        <i class="bi bi-arrow-repeat text-warning me-2"></i>
+                                        <strong>@cycle.CycleName</strong>
+                                    </span>
+                                    <span class="badge bg-primary me-2">@cycle.ShiftCycleAssignments.Count shifts</span>
+                                    @if (!string.IsNullOrEmpty(cycle.Description))
+                                    {
+                                        <small class="text-muted">- @cycle.Description</small>
+                                    }
+                                </button>
+                            </h2>
+                            <div id="cycle_@cycle.CycleId" class="accordion-collapse collapse" data-bs-parent="#cyclesAccordion">
+                                <div class="accordion-body">
+                                    @if (cycle.ShiftCycleAssignments.Any())
+                                    {
+                                        <h6 class="mb-3"><i class="bi bi-list-ol"></i> Rotation Order:</h6>
+                                        <div class="row">
+                                            @foreach (var assignment in cycle.ShiftCycleAssignments.OrderBy(a => a.OrderNumber))
+                                            {
+                                                <div class="col-md-4 mb-3">
+                                                    <div class="card border-primary">
+                                                        <div class="card-header bg-primary text-white py-2">
+                                                            <strong>
+                                                                <i class="bi bi-@(assignment.OrderNumber)-circle me-1"></i>
+                                                                Step @assignment.OrderNumber
+                                                            </strong>
+                                                        </div>
+                                                        <div class="card-body py-2">
+                                                            <h6 class="mb-1">@(assignment.Shift?.Name ?? "Unknown")</h6>
+                                                            @if (assignment.Shift?.StartTime.HasValue == true && assignment.Shift?.EndTime.HasValue == true)
+                                                            {
+                                                                <small class="text-muted">
+                                                                    <i class="bi bi-clock me-1"></i>
+                                                                    @assignment.Shift.StartTime.Value.ToString("hh:mm tt") -
+                                                                    @assignment.Shift.EndTime.Value.ToString("hh:mm tt")
+                                                                </small>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted mb-0">No shifts assigned to this cycle yet.</p>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="card shadow mt-4">
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <a asp-action="Index" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-clock"></i> All Shifts
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a asp-action="ConfigureSplit" class="btn btn-outline-info w-100">
+                        <i class="bi bi-arrows-expand"></i> Split Shifts
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a asp-action="Assignments" class="btn btn-outline-success w-100">
+                        <i class="bi bi-person-check"></i> Assignments
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a asp-action="CreateCycle" class="btn btn-outline-warning w-100">
+                        <i class="bi bi-plus-circle"></i> New Cycle
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,147 @@
+﻿@{
+    ViewData["Title"] = "Employee Entitlements";
+    var employee = ViewBag.Employee as WebApplication1.Models.Employee;
+    var leaveTypes = ViewBag.LeaveTypes as List<WebApplication1.Models.Leave>;
+    var entitlements = ViewBag.Entitlements as Dictionary<int, decimal>;
+    var usage = ViewBag.Usage as Dictionary<int, int>;
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-person-gear text-primary"></i> Employee Entitlements</h2>
+                    <p class="text-muted mb-0">Manage leave entitlements for @(employee?.FullName ?? "Unknown")</p>
+                </div>
+                <div>
+                    <a asp-action="ManageEntitlements" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to All Employees
+                    </a>
+                </div>
+            </div>
+
+            <!-- Employee Info Card -->
+            @if (employee != null)
+            {
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 70px; height: 70px;">
+                                @{
+                                    var initial = employee.FirstName != null && employee.FirstName.Length > 0
+                                    ? employee.FirstName.Substring(0, 1) : "?";
+                                }
+                                <span class="text-white fw-bold fs-3">@initial</span>
+                            </div>
+                            <div>
+                                <h4 class="mb-0">@employee.FullName</h4>
+                                <p class="text-muted mb-0">
+                                    <i class="bi bi-envelope me-1"></i> @(employee.Email ?? "No email")
+                                </p>
+                                <p class="text-muted mb-0">
+                                    <i class="bi bi-building me-1"></i> @(employee.Department?.DepartmentName ?? "No Department")
+                                </p>
+                            </div>
+                            <div class="ms-auto text-end">
+                                <span class="badge bg-info fs-6">Employee ID: @employee.EmployeeId</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Entitlements Form -->
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-sliders"></i> Leave Entitlements (@DateTime.Now.Year)</h5>
+                </div>
+                <div class="card-body">
+                    @if (employee != null)
+                    {
+                        <form method="post" asp-action="UpdateEntitlements">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="employeeId" value="@employee.EmployeeId" />
+
+                            <div class="row">
+                                @if (leaveTypes != null)
+                                {
+                                    @foreach (var lt in leaveTypes)
+                                    {
+                                        var currentEntitlement = entitlements != null && entitlements.ContainsKey(lt.LeaveId)
+                                        ? (int)entitlements[lt.LeaveId] : 0;
+                                        var usedDays = usage != null && usage.ContainsKey(lt.LeaveId)
+                                        ? usage[lt.LeaveId] : 0;
+                                        var remaining = currentEntitlement - usedDays;
+                                        var percentage = currentEntitlement > 0
+                                        ? (int)((double)remaining / currentEntitlement * 100) : 0;
+                                        var progressColor = percentage > 50 ? "bg-success" : (percentage > 25 ? "bg-warning" : "bg-danger");
+
+                                        <div class="col-md-6 mb-4">
+                                            <div class="card h-100">
+                                                <div class="card-header bg-light">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <strong>@lt.LeaveType</strong>
+                                                        <span class="badge bg-info">@remaining / @currentEntitlement remaining</span>
+                                                    </div>
+                                                </div>
+                                                <div class="card-body">
+                                                    @if (!string.IsNullOrEmpty(lt.LeaveDescription))
+                                                    {
+                                                        <p class="small text-muted mb-3">@lt.LeaveDescription</p>
+                                                    }
+
+                                                    <!-- Progress Bar -->
+                                                    <div class="progress mb-3" style="height: 10px;">
+                                                        @{
+                                                            var usedPercentage = currentEntitlement > 0
+                                                            ? (int)((double)usedDays / currentEntitlement * 100) : 0;
+                                                        }
+                                                        <div class="progress-bar bg-success" style="width: @usedPercentage%"></div>
+                                                    </div>
+
+                                                    <div class="row text-center mb-3">
+                                                        <div class="col-4">
+                                                            <small class="text-muted">Entitled</small>
+                                                            <h5 class="text-primary mb-0">@currentEntitlement</h5>
+                                                        </div>
+                                                        <div class="col-4">
+                                                            <small class="text-muted">Used</small>
+                                                            <h5 class="text-success mb-0">@usedDays</h5>
+                                                        </div>
+                                                        <div class="col-4">
+                                                            <small class="text-muted">Left</small>
+                                                            <h5 class="@(remaining > 0 ? "text-info" : "text-danger") mb-0">@remaining</h5>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Entitlement Input -->
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">Days</span>
+                                                        <input type="number" name="entitlements[@lt.LeaveId]" class="form-control"
+                                                               value="@currentEntitlement" min="0" max="365" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+
+                            <!-- Submit Buttons -->
+                            <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                                <a asp-action="ManageEntitlements" class="btn btn-secondary btn-lg">
+                                    <i class="bi bi-x-circle"></i> Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-check-circle"></i> Save Entitlements
+                                </button>
+                            </div>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

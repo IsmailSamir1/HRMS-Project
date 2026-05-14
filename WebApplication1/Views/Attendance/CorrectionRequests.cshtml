@@ -1,0 +1,383 @@
+﻿@model List<WebApplication1.Models.AttendanceCorrectionRequest>
+@{
+    ViewData["Title"] = "Manage Correction Requests";
+    bool isSystemAdmin = ViewBag.IsSystemAdmin == true;
+    bool isHRAdmin = ViewBag.IsHRAdmin == true;
+    bool isLineManager = ViewBag.IsLineManager == true;
+}
+
+<div class="container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-pencil-square"></i> Manage Correction Requests</h2>
+            <p class="text-muted mb-0">Review and process attendance correction requests</p>
+        </div>
+        <div>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Attendance
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card border-primary shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-files display-4 text-primary"></i>
+                    <h2 class="mt-2 mb-0">@Model.Count</h2>
+                    <p class="text-muted mb-0">Total Requests</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-warning shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-hourglass-split display-4 text-warning"></i>
+                    <h2 class="mt-2 mb-0">@Model.Count(r => r.Status == "Pending")</h2>
+                    <p class="text-muted mb-0">Pending Review</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-success shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle display-4 text-success"></i>
+                    <h2 class="mt-2 mb-0">@Model.Count(r => r.Status == "Approved")</h2>
+                    <p class="text-muted mb-0">Approved</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-danger shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-x-circle display-4 text-danger"></i>
+                    <h2 class="mt-2 mb-0">@Model.Count(r => r.Status == "Rejected")</h2>
+                    <p class="text-muted mb-0">Rejected</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Requests Alert -->
+    @{
+        var pendingCount = Model.Count(r => r.Status == "Pending");
+    }
+    @if (pendingCount > 0)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <strong>Action Required:</strong> You have <strong>@pendingCount</strong> pending correction request(s) awaiting your review.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Filter Buttons -->
+    <div class="card shadow mb-4">
+        <div class="card-body py-2">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <strong class="me-3"><i class="bi bi-funnel"></i> Filter:</strong>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn active" data-filter="all">
+                            All (@Model.Count)
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-warning filter-btn" data-filter="Pending">
+                            Pending (@Model.Count(r => r.Status == "Pending"))
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="Approved">
+                            Approved (@Model.Count(r => r.Status == "Approved"))
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger filter-btn" data-filter="Rejected">
+                            Rejected (@Model.Count(r => r.Status == "Rejected"))
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
+                    <input type="text" id="searchInput" class="form-control form-control-sm d-inline-block" style="width: 250px;" placeholder="Search by employee name..." />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Requests Table -->
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-list-ul"></i> Correction Requests</h5>
+            <span class="badge bg-light text-dark fs-6">@Model.Count requests</span>
+        </div>
+        <div class="card-body p-0">
+            @if (Model == null || Model.Count == 0)
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                    <h5 class="mt-3 text-muted">No Correction Requests</h5>
+                    <p class="text-muted">There are no correction requests to review.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="requestsTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Employee</th>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Reviewed By</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var request in Model.OrderByDescending(r => r.Status == "Pending").ThenByDescending(r => r.Date))
+                            {
+                                string rowClass = request.Status switch
+                                {
+                                    "Pending" => "table-warning",
+                                    "Approved" => "table-success",
+                                    "Rejected" => "table-danger",
+                                    _ => ""
+                                };
+
+                                <tr class="request-row @rowClass" data-status="@request.Status">
+                                    <td><strong>#@request.RequestId</strong></td>
+                                    <td>
+                                        <i class="bi bi-person me-1"></i>
+                                        <strong>@(request.Employee?.FullName ?? "Unknown")</strong>
+                                        @if (!string.IsNullOrEmpty(request.Employee?.Email))
+                                        {
+                                            <br />
+                                            <small class="text-muted">@request.Employee.Email</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <i class="bi bi-calendar-date me-1"></i>
+                                        @request.Date?.ToString("MMM dd, yyyy")
+                                        <br />
+                                        <small class="text-muted">@request.Date?.DayOfWeek</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">@request.CorrectionType</span>
+                                    </td>
+                                    <td>
+                                        <span class="d-inline-block text-truncate" style="max-width: 200px;" title="@request.Reason">
+                                            @request.Reason
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (request.Status == "Pending")
+                                        {
+                                            <span class="badge bg-warning text-dark fs-6">
+                                                <i class="bi bi-hourglass-split"></i> Pending
+                                            </span>
+                                        }
+                                        else if (request.Status == "Approved")
+                                        {
+                                            <span class="badge bg-success fs-6">
+                                                <i class="bi bi-check-circle"></i> Approved
+                                            </span>
+                                        }
+                                        else if (request.Status == "Rejected")
+                                        {
+                                            <span class="badge bg-danger fs-6">
+                                                <i class="bi bi-x-circle"></i> Rejected
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary fs-6">@request.Status</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (request.RecordedByNavigation != null)
+                                        {
+                                            <i class="bi bi-person-check me-1"></i>
+                                            @request.RecordedByNavigation.FullName
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (request.Status == "Pending")
+                                        {
+                                            <!-- Approve Button -->
+                                            <form method="post" asp-action="ApproveCorrection" asp-route-id="@request.RequestId" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-success" title="Approve"
+                                                        onclick="return confirm('Are you sure you want to approve this correction request?');">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                            </form>
+
+                                            <!-- Reject Button (opens modal) -->
+                                            <button type="button" class="btn btn-sm btn-danger" title="Reject"
+                                                    data-bs-toggle="modal" data-bs-target="#rejectModal_@request.RequestId">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+
+                                            <!-- View Details Button -->
+                                            <button type="button" class="btn btn-sm btn-info" title="View Details"
+                                                    data-bs-toggle="modal" data-bs-target="#detailsModal_@request.RequestId">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+
+                                            <!-- Reject Modal -->
+                                            <div class="modal fade" id="rejectModal_@request.RequestId" tabindex="-1">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header bg-danger text-white">
+                                                            <h5 class="modal-title">
+                                                                <i class="bi bi-x-circle"></i> Reject Request #@request.RequestId
+                                                            </h5>
+                                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <form method="post" asp-action="RejectCorrection" asp-route-id="@request.RequestId">
+                                                            @Html.AntiForgeryToken()
+                                                            <div class="modal-body">
+                                                                <div class="alert alert-warning">
+                                                                    <strong>Request from:</strong> @(request.Employee?.FullName ?? "Unknown")
+                                                                    <br />
+                                                                    <strong>Date:</strong> @request.Date?.ToString("MMM dd, yyyy")
+                                                                    <br />
+                                                                    <strong>Type:</strong> @request.CorrectionType
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Rejection Reason (Optional)</label>
+                                                                    <textarea name="RejectionReason" class="form-control" rows="3"
+                                                                  placeholder="Provide a reason for rejecting this request..."></textarea>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                <button type="submit" class="btn btn-danger">
+                                                                    <i class="bi bi-x-circle"></i> Reject Request
+                                                                </button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Details Modal -->
+                                            <div class="modal fade" id="detailsModal_@request.RequestId" tabindex="-1">
+                                                <div class="modal-dialog modal-lg">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header bg-info text-white">
+                                                            <h5 class="modal-title">
+                                                                <i class="bi bi-eye"></i> Request Details #@request.RequestId
+                                                            </h5>
+                                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <div class="row">
+                                                                <div class="col-md-6">
+                                                                    <h6 class="text-muted">Employee Information</h6>
+                                                                    <p>
+                                                                        <strong>Name:</strong> @(request.Employee?.FullName ?? "Unknown")
+                                                                        <br />
+                                                                        <strong>Email:</strong> @(request.Employee?.Email ?? "N/A")
+                                                                        <br />
+                                                                        <strong>Department:</strong> @(request.Employee?.Department?.DepartmentName ?? "N/A")
+                                                                    </p>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <h6 class="text-muted">Request Information</h6>
+                                                                    <p>
+                                                                        <strong>Date:</strong> @request.Date?.ToString("MMMM dd, yyyy")
+                                                                        <br />
+                                                                        <strong>Type:</strong> <span class="badge bg-secondary">@request.CorrectionType</span>
+                                                                        <br />
+                                                                        <strong>Status:</strong> <span class="badge bg-warning text-dark">@request.Status</span>
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <hr />
+                                                            <h6 class="text-muted">Reason for Correction</h6>
+                                                            <div class="card">
+                                                                <div class="card-body bg-light">
+                                                                    @request.Reason
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                            <form method="post" asp-action="ApproveCorrection" asp-route-id="@request.RequestId" class="d-inline">
+                                                                @Html.AntiForgeryToken()
+                                                                <button type="submit" class="btn btn-success">
+                                                                    <i class="bi bi-check-circle"></i> Approve
+                                                                </button>
+                                                            </form>
+                                                            <button type="button" class="btn btn-danger" data-bs-dismiss="modal"
+                                                                    onclick="$('#rejectModal_@request.RequestId').modal('show');">
+                                                                <i class="bi bi-x-circle"></i> Reject
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Processed</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Filter buttons
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const rows = document.querySelectorAll('.request-row');
+
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Update active button
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+
+                    const filter = this.getAttribute('data-filter');
+
+                    rows.forEach(row => {
+                        const status = row.getAttribute('data-status');
+
+                        if (filter === 'all' || status === filter) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                });
+            });
+
+            // Search functionality
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('keyup', function() {
+                const searchTerm = this.value.toLowerCase();
+
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(searchTerm) ? '' : 'none';
+                });
+
+                // Reset filter buttons
+                filterBtns.forEach(b => b.classList.remove('active'));
+                document.querySelector('[data-filter="all"]').classList.add('active');
+            });
+        });
+    </script>
+}

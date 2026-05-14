@@ -1,0 +1,121 @@
+﻿@{
+    ViewData["Title"] = "Assign New Mission";
+    var employees = ViewBag.Employees as List<WebApplication1.Models.Employee>;
+    var managers = ViewBag.Managers as List<WebApplication1.Models.Employee>;
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-geo-alt"></i> Assign New Mission
+                    </h4>
+                    <small>HR Admin - Assign mission to an employee</small>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> @ViewBag.Error
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <form method="post" asp-action="Create">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Destination -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-geo-alt"></i> Destination <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="Destination" class="form-control" placeholder="Enter mission destination (e.g., New York, London)" required />
+                            <small class="text-muted">Where will the employee be going?</small>
+                        </div>
+
+                        <!-- Employee -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-person"></i> Employee <span class="text-danger">*</span>
+                            </label>
+                            <select name="EmployeeId" class="form-select" required>
+                                <option value="">-- Select Employee --</option>
+                                @if (employees != null)
+                                {
+                                    @foreach (var emp in employees)
+                                    {
+                                        <option value="@emp.EmployeeId">@emp.FullName (@emp.Email)</option>
+                                    }
+                                }
+                            </select>
+                            <small class="text-muted">Which employee is being assigned to this mission?</small>
+                        </div>
+
+                        <!-- Manager (Approver) -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-person-badge"></i> Approving Manager
+                            </label>
+                            <select name="ManagerId" class="form-select">
+                                <option value="">-- Select Manager (Optional) --</option>
+                                @if (managers != null)
+                                {
+                                    @foreach (var mgr in managers)
+                                    {
+                                        <option value="@mgr.EmployeeId">@mgr.FullName (@mgr.Email)</option>
+                                    }
+                                }
+                            </select>
+                            <small class="text-muted">Which manager will approve/reject this mission?</small>
+                        </div>
+
+                        <!-- Start Date -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-calendar-event"></i> Start Date <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" name="StartDate" class="form-control" required />
+                                <small class="text-muted">When does the mission start?</small>
+                            </div>
+
+                            <!-- End Date -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-calendar-check"></i> End Date
+                                </label>
+                                <input type="date" name="EndDate" class="form-control" />
+                                <small class="text-muted">When does the mission end? (Optional)</small>
+                            </div>
+                        </div>
+
+                        <!-- Info Box -->
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Note:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>The mission will be created with <strong>"Pending"</strong> status</li>
+                                <li>If a manager is assigned, they can approve or reject the mission</li>
+                                <li>The employee will see this mission in their mission list</li>
+                            </ul>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle"></i> Assign Mission
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+```
+

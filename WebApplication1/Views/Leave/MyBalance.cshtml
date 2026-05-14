@@ -1,0 +1,245 @@
+﻿@model List<WebApplication1.Controllers.LeaveBalanceViewModel>
+@{
+    ViewData["Title"] = "My Leave Balance";
+    var employee = ViewBag.Employee as WebApplication1.Models.Employee;
+}
+
+<div class="container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-pie-chart-fill"></i> My Leave Balance</h2>
+            <p class="text-muted mb-0">View your leave entitlements and usage for @DateTime.Now.Year</p>
+        </div>
+        <div>
+            <a asp-action="Create" class="btn btn-success me-2">
+                <i class="bi bi-plus-circle"></i> Request Leave
+            </a>
+            <a asp-action="MyLeaveRequests" class="btn btn-primary me-2">
+                <i class="bi bi-list-ul"></i> My Requests
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <!-- Employee Info Card -->
+    @if (employee != null)
+    {
+        <div class="card shadow mb-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
+                        <i class="bi bi-person-fill text-white fs-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0">@employee.FullName</h4>
+                        <p class="text-muted mb-0">
+                            <i class="bi bi-building me-1"></i> @(employee.Department?.DepartmentName ?? "No Department")
+                        </p>
+                    </div>
+                    <div class="ms-auto text-end">
+                        <span class="badge bg-info fs-6">
+                            <i class="bi bi-calendar3"></i> Year @DateTime.Now.Year
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Leave Balance Cards -->
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="card shadow">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-exclamation-circle display-1 text-warning"></i>
+                <h4 class="mt-3">No Leave Entitlements Found</h4>
+                <p class="text-muted">You don't have any leave entitlements assigned yet.</p>
+                <p class="text-muted">Please contact HR to set up your leave entitlements.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            @{
+                int totalEntitled = Model.Sum(m => m.TotalAllowed);
+                int totalUsed = Model.Sum(m => m.UsedDays);
+                int totalPending = Model.Sum(m => m.PendingDays);
+                int totalRemaining = Model.Sum(m => m.RemainingDays);
+            }
+            <div class="col-md-3 mb-3">
+                <div class="card border-primary shadow h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-calendar-check display-4 text-primary"></i>
+                        <h2 class="mt-2 mb-0">@totalEntitled</h2>
+                        <p class="text-muted mb-0">Total Entitled</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card border-success shadow h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-check2-circle display-4 text-success"></i>
+                        <h2 class="mt-2 mb-0">@totalUsed</h2>
+                        <p class="text-muted mb-0">Days Used</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card border-warning shadow h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-hourglass-split display-4 text-warning"></i>
+                        <h2 class="mt-2 mb-0">@totalPending</h2>
+                        <p class="text-muted mb-0">Pending Approval</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card border-info shadow h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-wallet2 display-4 text-info"></i>
+                        <h2 class="mt-2 mb-0">@totalRemaining</h2>
+                        <p class="text-muted mb-0">Days Remaining</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Balance by Leave Type -->
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-list-columns-reverse"></i> Balance by Leave Type</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    @foreach (var balance in Model)
+                    {
+                        var percentage = balance.TotalAllowed > 0
+                        ? (int)((double)balance.RemainingDays / balance.TotalAllowed * 100)
+                        : 0;
+                        var usedPercentage = balance.TotalAllowed > 0
+                        ? (int)((double)balance.UsedDays / balance.TotalAllowed * 100)
+                        : 0;
+                        var pendingPercentage = balance.TotalAllowed > 0
+                        ? (int)((double)balance.PendingDays / balance.TotalAllowed * 100)
+                        : 0;
+
+                        string cardBorder = percentage > 50 ? "border-success" : (percentage > 25 ? "border-warning" : "border-danger");
+                        string progressColor = percentage > 50 ? "bg-success" : (percentage > 25 ? "bg-warning" : "bg-danger");
+                        string statusText = percentage > 50 ? "Good" : (percentage > 25 ? "Low" : "Critical");
+                        string statusBadge = percentage > 50 ? "bg-success" : (percentage > 25 ? "bg-warning text-dark" : "bg-danger");
+
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100 @cardBorder shadow-sm">
+                                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-tag-fill text-primary me-1"></i>
+                                        @balance.LeaveType
+                                    </h6>
+                                    <span class="badge @statusBadge">@statusText</span>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Visual Progress -->
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <small class="text-muted">Usage</small>
+                                            <small class="text-muted">@balance.RemainingDays / @balance.TotalAllowed days</small>
+                                        </div>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-success" style="width: @usedPercentage%"
+                                                 title="Used: @balance.UsedDays days">
+                                                @if (usedPercentage > 15)
+                                                {
+                                                    <span class="small">@balance.UsedDays used</span>
+                                                }
+                                            </div>
+                                            <div class="progress-bar bg-warning" style="width: @pendingPercentage%"
+                                                 title="Pending: @balance.PendingDays days">
+                                                @if (pendingPercentage > 15)
+                                                {
+                                                    <span class="small">@balance.PendingDays pending</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Stats -->
+                                    <div class="row text-center">
+                                        <div class="col-4">
+                                            <div class="border-end">
+                                                <h5 class="mb-0 text-primary">@balance.TotalAllowed</h5>
+                                                <small class="text-muted">Entitled</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="border-end">
+                                                <h5 class="mb-0 text-success">@balance.UsedDays</h5>
+                                                <small class="text-muted">Used</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <h5 class="mb-0 @(percentage > 25 ? "text-info" : "text-danger")">@balance.RemainingDays</h5>
+                                            <small class="text-muted">Left</small>
+                                        </div>
+                                    </div>
+
+                                    @if (balance.PendingDays > 0)
+                                    {
+                                        <div class="alert alert-warning py-2 mt-3 mb-0 small">
+                                            <i class="bi bi-hourglass-split me-1"></i>
+                                            @balance.PendingDays day(s) pending approval
+                                        </div>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(balance.Description))
+                                    {
+                                        <p class="text-muted small mt-3 mb-0">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            @balance.Description
+                                        </p>
+                                    }
+                                </div>
+                                <div class="card-footer bg-light">
+                                    <a asp-action="Create" class="btn btn-sm btn-outline-success w-100">
+                                        <i class="bi bi-plus-circle"></i> Request @balance.LeaveType
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h6 class="mb-3"><i class="bi bi-info-circle"></i> Legend</h6>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="bg-success rounded me-2" style="width: 20px; height: 20px;"></div>
+                            <small>Used Days</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="bg-warning rounded me-2" style="width: 20px; height: 20px;"></div>
+                            <small>Pending Approval</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="bg-light border rounded me-2" style="width: 20px; height: 20px;"></div>
+                            <small>Remaining Days</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

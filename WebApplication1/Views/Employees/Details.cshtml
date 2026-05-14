@@ -1,0 +1,411 @@
+﻿@model WebApplication1.Models.Employee
+@{
+    ViewData["Title"] = "Employee Profile";
+    bool isHrAdmin = Context.Session.GetString("IsHRAdmin") == "True";
+    bool isSystemAdmin = Context.Session.GetString("IsSystemAdmin") == "True";
+    bool isLineManager = Context.Session.GetString("IsLineManager") == "True";
+    int? sessionId = Context.Session.GetInt32("EmployeeId");
+    bool isOwnProfile = sessionId == Model.EmployeeId;
+    bool canEdit = isHrAdmin || isSystemAdmin || isOwnProfile;
+}
+
+<div class="container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-person-badge"></i> Employee Profile</h2>
+            <p class="text-muted mb-0">View employee details and information</p>
+        </div>
+        <div>
+            @if (canEdit)
+            {
+                <a asp-controller="Account" asp-action="Edit" asp-route-id="@Model.EmployeeId" class="btn btn-primary me-2">
+                    <i class="bi bi-pencil"></i> Edit Profile
+                </a>
+            }
+            <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column - Profile Picture & Quick Info -->
+        <div class="col-md-4 mb-4">
+            <!-- Profile Picture Card -->
+            <div class="card shadow mb-4">
+                <div class="card-body text-center">
+                    @if (!string.IsNullOrEmpty(Model.ProfileImage))
+                    {
+                        <img src="@Model.ProfileImage" alt="@Model.FullName"
+                             class="rounded-circle img-thumbnail mb-3"
+                             style="width: 180px; height: 180px; object-fit: cover;" />
+                    }
+                    else
+                    {
+                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center mx-auto mb-3"
+                             style="width: 180px; height: 180px;">
+                            <span class="text-white" style="font-size: 4rem;">
+                                @(Model.FirstName?.Substring(0, 1).ToUpper())@(Model.LastName?.Substring(0, 1).ToUpper())
+                            </span>
+                        </div>
+                    }
+
+                    <h4 class="mb-1">@Model.FullName</h4>
+
+                    @if (Model.Position != null)
+                    {
+                        <p class="text-muted mb-2">@Model.Position.PositionTitle</p>
+                    }
+
+                    @if (Model.Department != null)
+                    {
+                        <span class="badge bg-primary mb-2">@Model.Department.DepartmentName</span>
+                    }
+
+                    <div class="mt-3">
+                        @if (Model.IsActive == true)
+                        {
+                            <span class="badge bg-success fs-6"><i class="bi bi-check-circle"></i> Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary fs-6"><i class="bi bi-x-circle"></i> Inactive</span>
+                        }
+                    </div>
+
+                    @if (isOwnProfile)
+                    {
+                        <div class="mt-2">
+                            <span class="badge bg-info">This is your profile</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Profile Completion Card -->
+            @if (Model.ProfileCompletion.HasValue)
+            {
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="bi bi-clipboard-check"></i> Profile Completion</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-2">
+                            <span class="display-6 fw-bold text-info">@Model.ProfileCompletion%</span>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            @{
+                                string progressColor = Model.ProfileCompletion >= 80 ? "bg-success" :
+                                Model.ProfileCompletion >= 50 ? "bg-warning" : "bg-danger";
+                            }
+                            <div class="progress-bar @progressColor" role="progressbar"
+                                 style="width: @Model.ProfileCompletion%;"
+                                 aria-valuenow="@Model.ProfileCompletion" aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Quick Contact Card -->
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h6 class="mb-0"><i class="bi bi-telephone"></i> Quick Contact</h6>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(Model.Email))
+                    {
+                        <p class="mb-2">
+                            <i class="bi bi-envelope me-2 text-primary"></i>
+                            <a href="mailto:@Model.Email">@Model.Email</a>
+                        </p>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Phone))
+                    {
+                        <p class="mb-2">
+                            <i class="bi bi-telephone me-2 text-success"></i>
+                            <a href="tel:@Model.Phone">@Model.Phone</a>
+                        </p>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Address))
+                    {
+                        <p class="mb-0">
+                            <i class="bi bi-geo-alt me-2 text-danger"></i>
+                            @Model.Address
+                        </p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Detailed Info -->
+        <div class="col-md-8">
+            <!-- Personal Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-person"></i> Personal Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted small">First Name</label>
+                            <p class="fw-bold mb-0">@(Model.FirstName ?? "N/A")</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted small">Last Name</label>
+                            <p class="fw-bold mb-0">@(Model.LastName ?? "N/A")</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted small">National ID</label>
+                            <p class="fw-bold mb-0">@(Model.NationalId ?? "N/A")</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted small">Date of Birth</label>
+                            <p class="fw-bold mb-0">@(Model.DateOfBirth?.ToString("MMMM dd, yyyy") ?? "N/A")</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted small">Country of Birth</label>
+                            <p class="fw-bold mb-0">@(Model.CountryOfBirth ?? "N/A")</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted small">Email</label>
+                            <p class="fw-bold mb-0">@(Model.Email ?? "N/A")</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted small">Phone</label>
+                            <p class="fw-bold mb-0">@(Model.Phone ?? "N/A")</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted small">Address</label>
+                            <p class="fw-bold mb-0">@(Model.Address ?? "N/A")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emergency Contact -->
+            <div class="card shadow mb-4 border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-telephone-forward"></i> Emergency Contact</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-muted small">Contact Name</label>
+                            <p class="fw-bold mb-0">@(Model.EmergencyContactName ?? "N/A")</p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-muted small">Contact Phone</label>
+                            <p class="fw-bold mb-0">@(Model.EmergencyContactPhone ?? "N/A")</p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-muted small">Relationship</label>
+                            <p class="fw-bold mb-0">@(Model.Relationship ?? "N/A")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Biography -->
+            @if (!string.IsNullOrEmpty(Model.Biography))
+            {
+                <div class="card shadow mb-4 border-success">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-file-person"></i> Biography</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">@Model.Biography</p>
+                    </div>
+                </div>
+            }
+
+            <!-- Employment Information -->
+            <div class="card shadow mb-4 border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-briefcase"></i> Employment Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-muted small">Department</label>
+                            <p class="fw-bold mb-0">
+                                @if (Model.Department != null)
+                                {
+                                    <span class="badge bg-primary">@Model.Department.DepartmentName</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">N/A</span>
+                                }
+                            </p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-muted small">Position</label>
+                            <p class="fw-bold mb-0">
+                                @if (Model.Position != null)
+                                {
+                                    <span class="badge bg-info">@Model.Position.PositionTitle</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">N/A</span>
+                                }
+                            </p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-muted small">Manager</label>
+                            <p class="fw-bold mb-0">
+                                @if (Model.Manager != null)
+                                {
+                                    @Model.Manager.FullName
+                                }
+                                else
+                                {
+                                    <span class="text-muted">N/A</span>
+                                }
+                            </p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-muted small">Hire Date</label>
+                            <p class="fw-bold mb-0">@(Model.HireDate?.ToString("MMMM dd, yyyy") ?? "N/A")</p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-muted small">Employment Status</label>
+                            <p class="fw-bold mb-0">
+                                @if (Model.EmploymentStatus == "Active")
+                                {
+                                    <span class="badge bg-success">@Model.EmploymentStatus</span>
+                                }
+                                else if (Model.EmploymentStatus == "On Leave")
+                                {
+                                    <span class="badge bg-warning text-dark">@Model.EmploymentStatus</span>
+                                }
+                                else if (Model.EmploymentStatus == "Terminated" || Model.EmploymentStatus == "Resigned")
+                                {
+                                    <span class="badge bg-danger">@Model.EmploymentStatus</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">@(Model.EmploymentStatus ?? "N/A")</span>
+                                }
+                            </p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-muted small">Account Status</label>
+                            <p class="fw-bold mb-0">
+                                @if (Model.AccountStatus == "Active")
+                                {
+                                    <span class="badge bg-success">@Model.AccountStatus</span>
+                                }
+                                else if (Model.AccountStatus == "Locked")
+                                {
+                                    <span class="badge bg-danger">@Model.AccountStatus</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">@(Model.AccountStatus ?? "N/A")</span>
+                                }
+                            </p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-muted small">Employment Progress</label>
+                            <p class="fw-bold mb-0">@(Model.EmploymentProgress ?? "N/A")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payroll & Contract Information (Admin Only) -->
+            @if (isHrAdmin || isSystemAdmin)
+            {
+                <div class="card shadow mb-4 border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0"><i class="bi bi-cash-stack"></i> Payroll & Contract (Admin View)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label text-muted small">Contract ID</label>
+                                <p class="fw-bold mb-0">
+                                    @if (Model.Contract != null)
+                                    {
+                                        @Model.Contract.ContractId
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">N/A</span>
+                                    }
+                                </p>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label text-muted small">Pay Grade</label>
+                                <p class="fw-bold mb-0">
+                                    @if (Model.PayGradeNavigation != null)
+                                    {
+                                        @Model.PayGradeNavigation.PayGradeId
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">N/A</span>
+                                    }
+                                </p>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label text-muted small">Salary Type</label>
+                                <p class="fw-bold mb-0">
+                                    @if (Model.SalaryType != null)
+                                    {
+                                        @Model.SalaryType.SalaryTypeId
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">N/A</span>
+                                    }
+                                </p>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label text-muted small">Tax Form</label>
+                                <p class="fw-bold mb-0">
+                                    @if (Model.TaxForm != null)
+                                    {
+                                        @Model.TaxForm.TaxFormId
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">N/A</span>
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="card shadow mt-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+                <div>
+                    @if (canEdit)
+                    {
+                        <a asp-controller="Account" asp-action="Edit" asp-route-id="@Model.EmployeeId" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Edit Profile
+                        </a>
+                    }
+                    @if (isHrAdmin || isSystemAdmin)
+                    {
+                        <a asp-controller="Home" asp-action="AllEmployees" class="btn btn-info ms-2">
+                            <i class="bi bi-people"></i> All Employees
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,199 @@
+﻿@model List<WebApplication1.Controllers.SkillStats>
+@{
+    ViewData["Title"] = "Skills Directory";
+}
+
+<div class="container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1"><i class="bi bi-tools text-primary me-2"></i>Skills Directory</h2>
+            <p class="text-muted mb-0">Manage organization-wide skills and view employee proficiencies</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back
+            </a>
+            <a asp-action="CreateSkill" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i> Add New Skill
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-6 mb-3">
+            <div class="card shadow-sm border-0 bg-primary bg-opacity-10">
+                <div class="card-body text-center">
+                    <i class="bi bi-tools text-primary fs-1 mb-2"></i>
+                    <h3 class="mb-0">@Model.Count</h3>
+                    <small class="text-muted">Total Skills</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="card shadow-sm border-0 bg-success bg-opacity-10">
+                <div class="card-body text-center">
+                    <i class="bi bi-people text-success fs-1 mb-2"></i>
+                    <h3 class="mb-0">@Model.Sum(s => s.TotalEmployees)</h3>
+                    <small class="text-muted">Skill Assignments</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="card shadow-sm border-0 bg-warning bg-opacity-10">
+                <div class="card-body text-center">
+                    <i class="bi bi-star text-warning fs-1 mb-2"></i>
+                    <h3 class="mb-0">@Model.Sum(s => s.ExpertCount)</h3>
+                    <small class="text-muted">Expert Level</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="card shadow-sm border-0 bg-info bg-opacity-10">
+                <div class="card-body text-center">
+                    <i class="bi bi-graph-up text-info fs-1 mb-2"></i>
+                    <h3 class="mb-0">@Model.Sum(s => s.AdvancedCount)</h3>
+                    <small class="text-muted">Advanced Level</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skills Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-0">
+            <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>All Skills</h5>
+        </div>
+        <div class="card-body p-0">
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Skill Name</th>
+                                <th>Description</th>
+                                <th class="text-center">Total Employees</th>
+                                <th class="text-center">
+                                    <span class="badge bg-secondary">Beginner</span>
+                                </th>
+                                <th class="text-center">
+                                    <span class="badge bg-info">Intermediate</span>
+                                </th>
+                                <th class="text-center">
+                                    <span class="badge bg-primary">Advanced</span>
+                                </th>
+                                <th class="text-center">
+                                    <span class="badge bg-success">Expert</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var skill in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong><i class="bi bi-tools text-primary me-2"></i>@skill.Skill.SkillName</strong>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">@(skill.Skill.Description ?? "-")</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-dark">@skill.TotalEmployees</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (skill.BeginnerCount > 0)
+                                        {
+                                            <span class="badge bg-secondary">@skill.BeginnerCount</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (skill.IntermediateCount > 0)
+                                        {
+                                            <span class="badge bg-info">@skill.IntermediateCount</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (skill.AdvancedCount > 0)
+                                        {
+                                            <span class="badge bg-primary">@skill.AdvancedCount</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (skill.ExpertCount > 0)
+                                        {
+                                            <span class="badge bg-success">@skill.ExpertCount</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-tools text-muted" style="font-size: 4rem;"></i>
+                    <h4 class="mt-3">No Skills Found</h4>
+                    <p class="text-muted">Start by adding skills to the system.</p>
+                    <a asp-action="CreateSkill" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i> Add First Skill
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Proficiency Level Guide -->
+    <div class="card shadow-sm border-0 mt-4">
+        <div class="card-header bg-white border-0">
+            <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Proficiency Level Guide</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="p-3 bg-secondary bg-opacity-10 rounded text-center h-100">
+                        <span class="badge bg-secondary mb-2 fs-6">Beginner</span>
+                        <p class="small mb-0">Basic understanding, learning the fundamentals</p>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="p-3 bg-info bg-opacity-10 rounded text-center h-100">
+                        <span class="badge bg-info mb-2 fs-6">Intermediate</span>
+                        <p class="small mb-0">Can work independently on standard tasks</p>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="p-3 bg-primary bg-opacity-10 rounded text-center h-100">
+                        <span class="badge bg-primary mb-2 fs-6">Advanced</span>
+                        <p class="small mb-0">Deep expertise, can handle complex problems</p>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="p-3 bg-success bg-opacity-10 rounded text-center h-100">
+                        <span class="badge bg-success mb-2 fs-6">Expert</span>
+                        <p class="small mb-0">Mastery level, can teach and lead others</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

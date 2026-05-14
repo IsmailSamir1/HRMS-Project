@@ -1,0 +1,256 @@
+﻿@model List<WebApplication1.Models.AttendanceCorrectionRequest>
+@{
+    ViewData["Title"] = "My Correction Requests";
+}
+
+<div class="container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-list-check"></i> My Correction Requests</h2>
+            <p class="text-muted mb-0">Track the status of your attendance correction requests</p>
+        </div>
+        <div>
+            <a asp-action="RequestCorrection" class="btn btn-warning me-2">
+                <i class="bi bi-plus-circle"></i> New Request
+            </a>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Attendance
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card border-primary shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-files display-4 text-primary"></i>
+                    <h2 class="mt-2 mb-0">@Model.Count</h2>
+                    <p class="text-muted mb-0">Total Requests</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-warning shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-hourglass-split display-4 text-warning"></i>
+                    <h2 class="mt-2 mb-0">@Model.Count(r => r.Status == "Pending")</h2>
+                    <p class="text-muted mb-0">Pending</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-success shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle display-4 text-success"></i>
+                    <h2 class="mt-2 mb-0">@Model.Count(r => r.Status == "Approved")</h2>
+                    <p class="text-muted mb-0">Approved</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-danger shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-x-circle display-4 text-danger"></i>
+                    <h2 class="mt-2 mb-0">@Model.Count(r => r.Status == "Rejected")</h2>
+                    <p class="text-muted mb-0">Rejected</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Buttons -->
+    <div class="card shadow mb-4">
+        <div class="card-body py-2">
+            <div class="d-flex align-items-center">
+                <strong class="me-3"><i class="bi bi-funnel"></i> Filter:</strong>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-primary filter-btn active" data-filter="all">
+                        All (@Model.Count)
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-warning filter-btn" data-filter="Pending">
+                        Pending (@Model.Count(r => r.Status == "Pending"))
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="Approved">
+                        Approved (@Model.Count(r => r.Status == "Approved"))
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger filter-btn" data-filter="Rejected">
+                        Rejected (@Model.Count(r => r.Status == "Rejected"))
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Requests List -->
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-list-ul"></i> Correction Requests</h5>
+            <span class="badge bg-light text-dark fs-6">@Model.Count requests</span>
+        </div>
+        <div class="card-body p-0">
+            @if (Model == null || Model.Count == 0)
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                    <h5 class="mt-3 text-muted">No Correction Requests</h5>
+                    <p class="text-muted">You haven't submitted any correction requests yet.</p>
+                    <a asp-action="RequestCorrection" class="btn btn-warning">
+                        <i class="bi bi-plus-circle"></i> Submit New Request
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="list-group list-group-flush" id="requestsList">
+                    @foreach (var request in Model.OrderByDescending(r => r.Date))
+                    {
+                        string borderColor = request.Status switch
+                        {
+                            "Pending" => "border-start border-warning border-4",
+                            "Approved" => "border-start border-success border-4",
+                            "Rejected" => "border-start border-danger border-4",
+                            _ => ""
+                        };
+
+                        <div class="list-group-item @borderColor request-item" data-status="@request.Status">
+                            <div class="row align-items-center">
+                                <div class="col-md-2">
+                                    <div class="text-center">
+                                        <i class="bi bi-calendar-date display-6 text-primary"></i>
+                                        <p class="mb-0 mt-1 fw-bold">
+                                            @request.Date?.ToString("MMM dd")
+                                        </p>
+                                        <small class="text-muted">@request.Date?.ToString("yyyy")</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5 class="mb-1">
+                                        <i class="bi bi-tag me-1"></i>
+                                        @request.CorrectionType
+                                    </h5>
+                                    <p class="mb-1 text-muted">
+                                        <i class="bi bi-chat-text me-1"></i>
+                                        @request.Reason
+                                    </p>
+                                    @if (request.RecordedByNavigation != null)
+                                    {
+                                        <small class="text-muted">
+                                            <i class="bi bi-person-check me-1"></i>
+                                            Reviewed by: @request.RecordedByNavigation.FullName
+                                        </small>
+                                    }
+                                </div>
+                                <div class="col-md-2 text-center">
+                                    @if (request.Status == "Pending")
+                                    {
+                                        <span class="badge bg-warning text-dark fs-6 px-3 py-2">
+                                            <i class="bi bi-hourglass-split me-1"></i> Pending
+                                        </span>
+                                    }
+                                    else if (request.Status == "Approved")
+                                    {
+                                        <span class="badge bg-success fs-6 px-3 py-2">
+                                            <i class="bi bi-check-circle me-1"></i> Approved
+                                        </span>
+                                    }
+                                    else if (request.Status == "Rejected")
+                                    {
+                                        <span class="badge bg-danger fs-6 px-3 py-2">
+                                            <i class="bi bi-x-circle me-1"></i> Rejected
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary fs-6 px-3 py-2">
+                                            @request.Status
+                                        </span>
+                                    }
+                                </div>
+                                <div class="col-md-2 text-center">
+                                    <small class="text-muted">
+                                        Request #@request.RequestId
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Help Section -->
+    <div class="card shadow mt-4">
+        <div class="card-header bg-info text-white">
+            <h6 class="mb-0"><i class="bi bi-question-circle"></i> Understanding Request Status</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-warning text-dark fs-6 me-3 px-3 py-2">
+                            <i class="bi bi-hourglass-split"></i>
+                        </span>
+                        <div>
+                            <strong>Pending</strong>
+                            <p class="mb-0 small text-muted">Awaiting review by your manager or HR</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-success fs-6 me-3 px-3 py-2">
+                            <i class="bi bi-check-circle"></i>
+                        </span>
+                        <div>
+                            <strong>Approved</strong>
+                            <p class="mb-0 small text-muted">Your correction has been approved and applied</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-danger fs-6 me-3 px-3 py-2">
+                            <i class="bi bi-x-circle"></i>
+                        </span>
+                        <div>
+                            <strong>Rejected</strong>
+                            <p class="mb-0 small text-muted">Request was denied. Contact HR for details</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const requestItems = document.querySelectorAll('.request-item');
+
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Update active button
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+
+                    const filter = this.getAttribute('data-filter');
+
+                    requestItems.forEach(item => {
+                        const status = item.getAttribute('data-status');
+
+                        if (filter === 'all' || status === filter) {
+                            item.style.display = '';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+}

@@ -1,0 +1,306 @@
+﻿@model WebApplication1.Models.Employee
+@{
+    ViewData["Title"] = "Edit Profile";
+    bool isHrAdmin = Context.Session.GetString("IsHRAdmin") == "True";
+    bool isSystemAdmin = Context.Session.GetString("IsSystemAdmin") == "True";
+    bool isAdmin = isHrAdmin || isSystemAdmin;
+    int? sessionId = Context.Session.GetInt32("EmployeeId");
+    bool isOwnProfile = sessionId == Model.EmployeeId;
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-pencil-square"></i> Edit Profile
+                        @if (!isOwnProfile && isAdmin)
+                        {
+                            <small class="ms-2">- @Model.FullName</small>
+                        }
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> @TempData["Error"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <form method="post" asp-action="Edit" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="EmployeeId" />
+
+                        <!-- ========================================
+                             PROFILE PICTURE SECTION
+                             ======================================== -->
+                        <div class="card mb-4 border-info">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="bi bi-camera"></i> Profile Picture</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <!-- Current Profile Picture -->
+                                    <div class="col-md-4 text-center mb-3">
+                                        @if (!string.IsNullOrEmpty(Model.ProfileImage))
+                                        {
+                                            <img src="@Model.ProfileImage" alt="Profile Picture"
+                                                 class="rounded-circle img-thumbnail"
+                                                 style="width: 150px; height: 150px; object-fit: cover;" />
+                                            <p class="text-muted mt-2 mb-0">Current Picture</p>
+                                        }
+                                        else
+                                        {
+                                            <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto"
+                                                 style="width: 150px; height: 150px;">
+                                                <i class="bi bi-person-fill text-white" style="font-size: 4rem;"></i>
+                                            </div>
+                                            <p class="text-muted mt-2 mb-0">No Picture</p>
+                                        }
+                                    </div>
+
+                                    <!-- Upload New Picture -->
+                                    <div class="col-md-8">
+                                        <div class="mb-3">
+                                            <label class="form-label">
+                                                <i class="bi bi-upload"></i> Upload New Profile Picture
+                                            </label>
+                                            <input type="file" name="ProfileImageFile" class="form-control"
+                                                   accept=".jpg,.jpeg,.png,.gif" />
+                                            <small class="text-muted">
+                                                Allowed formats: JPG, JPEG, PNG, GIF. Max size: 5MB
+                                            </small>
+                                        </div>
+
+                                        @if (!string.IsNullOrEmpty(Model.ProfileImage))
+                                        {
+                                            <div class="mt-2">
+                                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                                        data-bs-toggle="modal" data-bs-target="#removePhotoModal">
+                                                    <i class="bi bi-trash"></i> Remove Current Picture
+                                                </button>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ========================================
+                             BASIC INFORMATION (Admin can edit)
+                             ======================================== -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-dark text-white">
+                                <h5 class="mb-0"><i class="bi bi-person"></i> Basic Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">First Name <span class="text-danger">*</span></label>
+                                        @if (isAdmin)
+                                        {
+                                            <input type="text" asp-for="FirstName" class="form-control" required />
+                                        }
+                                        else
+                                        {
+                                            <input type="text" class="form-control" value="@Model.FirstName" readonly disabled />
+                                            <input type="hidden" asp-for="FirstName" />
+                                        }
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                                        @if (isAdmin)
+                                        {
+                                            <input type="text" asp-for="LastName" class="form-control" required />
+                                        }
+                                        else
+                                        {
+                                            <input type="text" class="form-control" value="@Model.LastName" readonly disabled />
+                                            <input type="hidden" asp-for="LastName" />
+                                        }
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Email <span class="text-danger">*</span></label>
+                                        @if (isAdmin)
+                                        {
+                                            <input type="email" asp-for="Email" class="form-control" required />
+                                        }
+                                        else
+                                        {
+                                            <input type="email" class="form-control" value="@Model.Email" readonly disabled />
+                                            <input type="hidden" asp-for="Email" />
+                                        }
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Phone</label>
+                                        <input type="text" asp-for="Phone" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Address</label>
+                                    <textarea asp-for="Address" class="form-control" rows="2"></textarea>
+                                </div>
+                                @if (isAdmin)
+                                {
+                                    <div class="mb-3">
+                                        <label class="form-label">Country of Birth</label>
+                                        <input type="text" asp-for="CountryOfBirth" class="form-control" />
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- ========================================
+                             EMERGENCY CONTACT (Employee can edit)
+                             ======================================== -->
+                        @if (!isAdmin || isOwnProfile)
+                        {
+                            <div class="card mb-4 border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <h5 class="mb-0"><i class="bi bi-telephone-forward"></i> Emergency Contact</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Contact Name</label>
+                                            <input type="text" asp-for="EmergencyContactName" class="form-control" />
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Contact Phone</label>
+                                            <input type="text" asp-for="EmergencyContactPhone" class="form-control" />
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Relationship</label>
+                                            <input type="text" asp-for="Relationship" class="form-control" placeholder="e.g., Spouse, Parent" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- ========================================
+                             BIOGRAPHY (Employee can edit)
+                             ======================================== -->
+                        @if (!isAdmin || isOwnProfile)
+                        {
+                            <div class="card mb-4 border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0"><i class="bi bi-file-person"></i> Biography</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">About Me</label>
+                                        <textarea asp-for="Biography" class="form-control" rows="4"
+                                                  placeholder="Tell us about yourself..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- ========================================
+                             EMPLOYMENT STATUS (Admin only)
+                             ======================================== -->
+                        @if (isAdmin)
+                        {
+                            <div class="card mb-4 border-danger">
+                                <div class="card-header bg-danger text-white">
+                                    <h5 class="mb-0"><i class="bi bi-briefcase"></i> Employment Status (Admin Only)</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Employment Status</label>
+                                            <select asp-for="EmploymentStatus" class="form-select">
+                                                <option value="">-- Select --</option>
+                                                <option value="Active">Active</option>
+                                                <option value="On Leave">On Leave</option>
+                                                <option value="Suspended">Suspended</option>
+                                                <option value="Terminated">Terminated</option>
+                                                <option value="Resigned">Resigned</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Account Status</label>
+                                            <select asp-for="AccountStatus" class="form-select">
+                                                <option value="">-- Select --</option>
+                                                <option value="Active">Active</option>
+                                                <option value="Inactive">Inactive</option>
+                                                <option value="Locked">Locked</option>
+                                                <option value="Pending">Pending</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Is Active</label>
+                                            <select asp-for="IsActive" class="form-select">
+                                                <option value="true">Yes - Active</option>
+                                                <option value="false">No - Inactive</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- ========================================
+                             BUTTONS
+                             ======================================== -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <div>
+                                <a asp-controller="Employees" asp-action="Details" asp-route-id="@Model.EmployeeId" class="btn btn-info me-2">
+                                    <i class="bi bi-eye"></i> View Profile
+                                </a>
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-check-circle"></i> Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Remove Photo Modal -->
+@if (!string.IsNullOrEmpty(Model.ProfileImage))
+{
+    <div class="modal fade" id="removePhotoModal" tabindex="-1" aria-labelledby="removePhotoModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="removePhotoModalLabel">
+                        <i class="bi bi-trash"></i> Remove Profile Picture
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <img src="@Model.ProfileImage" alt="Profile Picture"
+                             class="rounded-circle img-thumbnail"
+                             style="width: 100px; height: 100px; object-fit: cover;" />
+                    </div>
+                    <p>Are you sure you want to remove your profile picture? This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x"></i> Cancel
+                    </button>
+                    <form method="post" asp-action="RemoveProfilePicture" asp-route-id="@Model.EmployeeId" style="display: inline;">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Yes, Remove Picture
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}

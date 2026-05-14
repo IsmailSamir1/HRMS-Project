@@ -1,0 +1,378 @@
+﻿@model WebApplication1.Models.ShiftSchedule
+@{
+    ViewData["Title"] = "Shift Details";
+    bool isSystemAdmin = ViewBag.IsSystemAdmin == true;
+    bool isHRAdmin = ViewBag.IsHRAdmin == true;
+    bool isLineManager = ViewBag.IsLineManager == true;
+}
+
+<div class="container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-clock text-primary me-2"></i>@Model.Name
+            </h2>
+            <p class="text-muted mb-0">Shift Details and Assignments</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Shifts
+            </a>
+            @if (isSystemAdmin)
+            {
+                <a asp-action="Edit" asp-route-id="@Model.ShiftId" class="btn btn-warning">
+                    <i class="bi bi-pencil me-1"></i> Edit
+                </a>
+            }
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Shift Information Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Shift Information</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless mb-0">
+                        <tbody>
+                            <tr>
+                                <td class="text-muted" style="width: 40%;">Shift Name</td>
+                                <td><strong>@Model.Name</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Shift Type</td>
+                                <td>
+                                    @{
+                                        var typeClass = Model.Type switch
+                                        {
+                                            "Morning" => "bg-warning text-dark",
+                                            "Evening" => "bg-info",
+                                            "Night" => "bg-dark",
+                                            "Split" => "bg-purple text-white",
+                                            "Rotational" => "bg-success",
+                                            _ => "bg-secondary"
+                                        };
+                                    }
+                                    <span class="badge @typeClass">@Model.Type</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Start Time</td>
+                                <td>
+                                    <i class="bi bi-clock text-success me-1"></i>
+                                    @(Model.StartTime?.ToString("hh:mm tt") ?? "N/A")
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">End Time</td>
+                                <td>
+                                    <i class="bi bi-clock text-danger me-1"></i>
+                                    @(Model.EndTime?.ToString("hh:mm tt") ?? "N/A")
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Duration</td>
+                                <td>
+                                    @if (Model.StartTime.HasValue && Model.EndTime.HasValue)
+                                    {
+                                        var duration = Model.EndTime.Value.ToTimeSpan() - Model.StartTime.Value.ToTimeSpan();
+                                        if (duration.TotalHours < 0)
+                                        {
+                                            duration = duration.Add(TimeSpan.FromHours(24)); // Overnight shift
+                                        }
+                                        <span class="badge bg-primary">@duration.Hours h @duration.Minutes m</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">N/A</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Break Duration</td>
+                                <td>
+                                    @if (Model.BreakDuration.HasValue && Model.BreakDuration > 0)
+                                    {
+                                        <i class="bi bi-cup-hot text-warning me-1"></i>
+                                        @Model.BreakDuration <span class="text-muted">minutes</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">No break</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Shift Date</td>
+                                <td>
+                                    @if (Model.ShiftDate.HasValue)
+                                    {
+                                        <i class="bi bi-calendar text-info me-1"></i>
+                                        @Model.ShiftDate.Value.ToString("MMM dd, yyyy")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Recurring</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Status</td>
+                                <td>
+                                    @if (Model.Status == "Active")
+                                    {
+                                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary"><i class="bi bi-x-circle me-1"></i>Inactive</span>
+                                    }
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-4">
+                            <div class="p-3 bg-primary bg-opacity-10 rounded">
+                                <i class="bi bi-people text-primary fs-1"></i>
+                                <h3 class="mb-0 mt-2">@(Model.ShiftAssignments?.Count ?? 0)</h3>
+                                <small class="text-muted">Total Assignments</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-4">
+                            <div class="p-3 bg-success bg-opacity-10 rounded">
+                                <i class="bi bi-person-check text-success fs-1"></i>
+                                <h3 class="mb-0 mt-2">@(Model.ShiftAssignments?.Count(a => a.Status == "Active") ?? 0)</h3>
+                                <small class="text-muted">Active Assignments</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-info bg-opacity-10 rounded">
+                                <i class="bi bi-arrow-repeat text-info fs-1"></i>
+                                <h3 class="mb-0 mt-2">@(Model.ShiftCycleAssignments?.Count ?? 0)</h3>
+                                <small class="text-muted">In Cycles</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-warning bg-opacity-10 rounded">
+                                <i class="bi bi-clock-history text-warning fs-1"></i>
+                                @if (Model.StartTime.HasValue && Model.EndTime.HasValue)
+                                {
+                                    var workHours = Model.EndTime.Value.ToTimeSpan() - Model.StartTime.Value.ToTimeSpan();
+                                    if (workHours.TotalHours < 0)
+                                    {
+                                        workHours = workHours.Add(TimeSpan.FromHours(24));
+                                    }
+                                    var netHours = workHours.TotalHours - ((Model.BreakDuration ?? 0) / 60.0);
+                                    <h3 class="mb-0 mt-2">@netHours.ToString("F1")</h3>
+                                }
+                                else
+                                {
+                                    <h3 class="mb-0 mt-2">-</h3>
+                                }
+                                <small class="text-muted">Net Hours</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assigned Employees -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-people me-2"></i>Assigned Employees</h5>
+            @if (isSystemAdmin || isLineManager)
+            {
+                <a asp-action="Assign" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i> Assign Employee
+                </a>
+            }
+        </div>
+        <div class="card-body p-0">
+            @if (Model.ShiftAssignments != null && Model.ShiftAssignments.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Employee</th>
+                                <th>Department</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Status</th>
+                                @if (isSystemAdmin || isLineManager)
+                                {
+                                    <th class="text-center">Actions</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var assignment in Model.ShiftAssignments.OrderByDescending(a => a.StartDate))
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px;">
+                                                <span class="text-primary fw-bold">
+                                                    @(assignment.Employee?.FullName?.Substring(0, 1).ToUpper() ?? "?")
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <strong>@(assignment.Employee?.FullName ?? "Unknown")</strong>
+                                                <br />
+                                                <small class="text-muted">@(assignment.Employee?.Position?.PositionTitle ?? "")</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>@(assignment.Employee?.Department?.DepartmentName ?? "-")</td>
+                                    <td>
+                                        <i class="bi bi-calendar-event text-success me-1"></i>
+                                        @(assignment.StartDate?.ToString("MMM dd, yyyy") ?? "-")
+                                    </td>
+                                    <td>
+                                        @if (assignment.EndDate.HasValue)
+                                        {
+                                            <i class="bi bi-calendar-x text-danger me-1"></i>
+                                            @assignment.EndDate.Value.ToString("MMM dd, yyyy")
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-info">Ongoing</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (assignment.Status == "Active")
+                                        {
+                                            <span class="badge bg-success">Active</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">@assignment.Status</span>
+                                        }
+                                    </td>
+                                    @if (isSystemAdmin || isLineManager)
+                                    {
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm">
+                                                @if (isSystemAdmin)
+                                                {
+                                                    <a asp-action="EditAssignment" asp-route-id="@assignment.AssignmentId" class="btn btn-outline-warning" title="Edit">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                }
+                                                <a asp-action="DeleteAssignment" asp-route-id="@assignment.AssignmentId" class="btn btn-outline-danger" title="Remove">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3">No Employees Assigned</h5>
+                    <p class="text-muted">No employees are currently assigned to this shift.</p>
+                    @if (isSystemAdmin || isLineManager)
+                    {
+                        <a asp-action="Assign" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i> Assign First Employee
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Shift Cycles (if any) -->
+    @if (Model.ShiftCycleAssignments != null && Model.ShiftCycleAssignments.Any())
+    {
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-arrow-repeat me-2"></i>Part of Shift Cycles</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    @foreach (var cycleAssignment in Model.ShiftCycleAssignments)
+                    {
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3 border rounded bg-light">
+                                <h6 class="mb-1">
+                                    <i class="bi bi-arrow-repeat text-primary me-1"></i>
+                                    @(cycleAssignment.Cycle?.CycleName ?? "Unknown Cycle")
+                                </h6>
+                                <small class="text-muted">Order: @cycleAssignment.OrderNumber</small>
+                                @if (!string.IsNullOrEmpty(cycleAssignment.Cycle?.Description))
+                                {
+                                    <p class="mb-0 small mt-1">@cycleAssignment.Cycle.Description</p>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Admin Actions -->
+    @if (isSystemAdmin)
+    {
+        <div class="card shadow-sm border-0 mt-4 border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="bi bi-shield-exclamation me-2"></i>Admin Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex gap-2 flex-wrap">
+                    <a asp-action="Edit" asp-route-id="@Model.ShiftId" class="btn btn-warning">
+                        <i class="bi bi-pencil me-1"></i> Edit Shift
+                    </a>
+                    <a asp-action="Assign" class="btn btn-success">
+                        <i class="bi bi-person-plus me-1"></i> Assign Employee
+                    </a>
+                    <a asp-action="AssignDepartment" class="btn btn-info">
+                        <i class="bi bi-building me-1"></i> Assign Department
+                    </a>
+                    @if (Model.ShiftAssignments == null || !Model.ShiftAssignments.Any())
+                    {
+                        <a asp-action="Delete" asp-route-id="@Model.ShiftId" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i> Delete Shift
+                        </a>
+                    }
+                    else
+                    {
+                        <button class="btn btn-danger" disabled title="Cannot delete shift with active assignments">
+                            <i class="bi bi-trash me-1"></i> Delete Shift
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .bg-purple {
+        background-color: #9b59b6 !important;
+    }
+</style>

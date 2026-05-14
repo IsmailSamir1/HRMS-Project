@@ -1,0 +1,300 @@
+﻿@model List<WebApplication1.Controllers.HierarchyNode>
+@{
+    ViewData["Title"] = "Organizational Hierarchy";
+    var departments = ViewBag.Departments as List<WebApplication1.Models.Department>;
+    var allEmployees = ViewBag.AllEmployees as List<WebApplication1.Models.Employee>;
+    var employeesByDepartment = ViewBag.EmployeesByDepartment as IEnumerable<dynamic>;
+}
+
+<div class="container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-diagram-3"></i> Organizational Hierarchy</h2>
+            <p class="text-muted mb-0">System Admin - View and manage organizational structure</p>
+        </div>
+        <div>
+            <a asp-action="Index" asp-controller="Home" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Info Box -->
+    <div class="alert alert-info mb-4">
+        <i class="bi bi-info-circle"></i>
+        <strong>Stored Procedure Used:</strong> <code>ViewOrgHierarchy</code> -
+        Returns complete organizational hierarchy with employees, managers, departments, and positions.
+    </div>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-circle"></i> @ViewBag.Error
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs mb-4" id="hierarchyTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="hierarchy-tab" data-bs-toggle="tab" data-bs-target="#hierarchy" type="button">
+                <i class="bi bi-diagram-3"></i> Hierarchy View
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="departments-tab" data-bs-toggle="tab" data-bs-target="#departments" type="button">
+                <i class="bi bi-building"></i> By Department
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="managers-tab" data-bs-toggle="tab" data-bs-target="#managers" type="button">
+                <i class="bi bi-people"></i> By Manager
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="hierarchyTabContent">
+
+        <!-- Hierarchy View Tab -->
+        <div class="tab-pane fade show active" id="hierarchy" role="tabpanel">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Complete Organizational Structure</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model == null || Model.Count == 0)
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox display-1 text-muted"></i>
+                            <h5 class="mt-3 text-muted">No hierarchy data found</h5>
+                            <p class="text-muted">No employees with manager relationships exist.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Level</th>
+                                        <th>Employee</th>
+                                        <th>Position</th>
+                                        <th>Department</th>
+                                        <th>Reports To</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var node in Model.OrderBy(n => n.HierarchyLevel).ThenBy(n => n.EmployeeName))
+                                    {
+                                        string levelBadge = node.HierarchyLevel == 0 ? "bg-danger" :
+                                        node.HierarchyLevel == 1 ? "bg-warning" :
+                                        node.HierarchyLevel == 2 ? "bg-info" : "bg-secondary";
+
+                                        <tr>
+                                            <td>
+                                                <span class="badge @levelBadge">Level @node.HierarchyLevel</span>
+                                            </td>
+                                            <td>
+                                                <i class="bi bi-person me-1"></i>
+                                                @node.EmployeeName
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary">@node.PositionTitle</span>
+                                            </td>
+                                            <td>
+                                                <i class="bi bi-building me-1"></i>
+                                                @node.DepartmentName
+                                            </td>
+                                            <td>
+                                                @if (node.ManagerName != "No Manager")
+                                                {
+                                                    <i class="bi bi-arrow-up-right me-1"></i>
+                                                    @node.ManagerName
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">Top Level</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (allEmployees != null)
+                                                {
+                                                    var employee = allEmployees.FirstOrDefault(e => e.FullName == node.EmployeeName);
+                                                    if (employee != null)
+                                                    {
+                                                        <a asp-action="Reassign" asp-route-id="@employee.EmployeeId" class="btn btn-sm btn-warning" title="Reassign">
+                                                            <i class="bi bi-arrow-left-right"></i>
+                                                        </a>
+                                                    }
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Departments Tab -->
+        <div class="tab-pane fade" id="departments" role="tabpanel">
+            <div class="row">
+                @if (employeesByDepartment != null && employeesByDepartment.Count() > 0)
+                {
+                    @foreach (var item in employeesByDepartment)
+                    {
+                        string deptName = item.Department ?? "Unknown";
+                        int count = (int)item.Count;
+
+                        var dept = departments?.FirstOrDefault(d => d.DepartmentName == deptName);
+                        int deptId = dept?.DepartmentId ?? 0;
+
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 shadow-sm border-primary">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-building display-4 text-primary"></i>
+                                    <h5 class="card-title mt-3">@deptName</h5>
+                                    <p class="card-text">
+                                        <span class="badge bg-primary fs-5">@count</span>
+                                        <span class="text-muted">employees</span>
+                                    </p>
+                                    @if (deptId > 0)
+                                    {
+                                        <a asp-action="Department" asp-route-id="@deptId" class="btn btn-primary">
+                                            <i class="bi bi-eye"></i> View Department
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <i class="bi bi-building display-1 text-muted"></i>
+                            <h5 class="mt-3 text-muted">No departments found</h5>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Managers Tab -->
+        <div class="tab-pane fade" id="managers" role="tabpanel">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-people"></i> Managers and Their Teams</h5>
+                </div>
+                <div class="card-body">
+                    @if (allEmployees != null)
+                    {
+                        var managers = allEmployees.Where(e => allEmployees.Any(emp => emp.ManagerId == e.EmployeeId)).ToList();
+
+                        @if (managers.Count > 0)
+                        {
+                            <div class="row">
+                                @foreach (var manager in managers)
+                                {
+                                    var teamCount = allEmployees.Count(e => e.ManagerId == manager.EmployeeId);
+
+                                    <div class="col-md-4 mb-4">
+                                        <div class="card h-100 shadow-sm border-success">
+                                            <div class="card-body text-center">
+                                                <i class="bi bi-person-badge display-4 text-success"></i>
+                                                <h5 class="card-title mt-3">@manager.FullName</h5>
+                                                <p class="card-text">
+                                                    <span class="badge bg-info">@manager.Position?.PositionTitle</span>
+                                                    <br />
+                                                    <span class="badge bg-success fs-5 mt-2">@teamCount</span>
+                                                    <span class="text-muted">team members</span>
+                                                </p>
+                                                <a asp-action="Team" asp-route-managerId="@manager.EmployeeId" class="btn btn-success">
+                                                    <i class="bi bi-people"></i> View Team
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-5">
+                                <i class="bi bi-person-x display-1 text-muted"></i>
+                                <h5 class="mt-3 text-muted">No managers found</h5>
+                                <p class="text-muted">No employees have team members reporting to them.</p>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mt-4">
+        <div class="col-md-4 mb-3">
+            <div class="card bg-primary text-white shadow">
+                <div class="card-body text-center">
+                    <i class="bi bi-people display-4"></i>
+                    <h2 class="mt-2 mb-0">
+                        @if (allEmployees != null)
+                        {
+                            @allEmployees.Count
+                        }
+                        else
+                        {
+                            @:0
+                        }
+                    </h2>
+                    <p class="mb-0">Total Employees</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card bg-success text-white shadow">
+                <div class="card-body text-center">
+                    <i class="bi bi-building display-4"></i>
+                    <h2 class="mt-2 mb-0">
+                        @if (departments != null)
+                        {
+                            @departments.Count
+                        }
+                        else
+                        {
+                            @:0
+                        }
+                    </h2>
+                    <p class="mb-0">Departments</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card bg-info text-white shadow">
+                <div class="card-body text-center">
+                    <i class="bi bi-person-badge display-4"></i>
+                    <h2 class="mt-2 mb-0">
+                        @if (allEmployees != null)
+                        {
+                            @allEmployees.Count(e => allEmployees.Any(emp => emp.ManagerId == e.EmployeeId))
+                        }
+                        else
+                        {
+                            @:0
+                        }
+                    </h2>
+                    <p class="mb-0">Managers</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+```
+

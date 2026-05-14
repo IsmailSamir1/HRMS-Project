@@ -1,0 +1,213 @@
+﻿@{
+    ViewData["Title"] = "Request Attendance Correction";
+    var recentAttendance = ViewBag.RecentAttendance as List<WebApplication1.Models.Attendance>;
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="bi bi-pencil-square"></i> Request Attendance Correction
+                    </h4>
+                    <small>Submit a request to correct your attendance record</small>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> @ViewBag.Error
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <!-- Info Box -->
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>When to request a correction:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>You forgot to clock in or clock out</li>
+                            <li>System error recorded wrong time</li>
+                            <li>You worked but attendance wasn't recorded</li>
+                            <li>Time was recorded incorrectly</li>
+                        </ul>
+                    </div>
+
+                    <form method="post" asp-action="RequestCorrection">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Date Selection -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-calendar-date"></i> Date to Correct <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" name="Date" class="form-control" required
+                                   max="@DateTime.Today.ToString("yyyy-MM-dd")"
+                                   value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                            <small class="text-muted">Select the date for which you need a correction</small>
+                        </div>
+
+                        <!-- Correction Type -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-tag"></i> Correction Type <span class="text-danger">*</span>
+                            </label>
+                            <select name="CorrectionType" class="form-select" required id="correctionType">
+                                <option value="">-- Select Type --</option>
+                                <option value="Missing Clock In">Missing Clock In</option>
+                                <option value="Missing Clock Out">Missing Clock Out</option>
+                                <option value="Wrong Clock In Time">Wrong Clock In Time</option>
+                                <option value="Wrong Clock Out Time">Wrong Clock Out Time</option>
+                                <option value="Missing Full Day">Missing Full Day Record</option>
+                                <option value="System Error">System Error</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <small class="text-muted">Select the type of correction needed</small>
+                        </div>
+
+                        <!-- Dynamic Fields Based on Type -->
+                        <div id="timeFields" style="display: none;">
+                            <div class="card mb-3 border-secondary">
+                                <div class="card-header bg-secondary text-white">
+                                    <h6 class="mb-0"><i class="bi bi-clock"></i> Correct Time Information</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Correct Clock In Time</label>
+                                            <input type="time" name="CorrectClockIn" class="form-control" />
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Correct Clock Out Time</label>
+                                            <input type="time" name="CorrectClockOut" class="form-control" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reason -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="bi bi-chat-text"></i> Reason for Correction <span class="text-danger">*</span>
+                            </label>
+                            <textarea name="Reason" class="form-control" rows="4" required
+                                      placeholder="Please provide a detailed explanation for this correction request..."></textarea>
+                            <small class="text-muted">Provide a clear and detailed reason (minimum 10 characters)</small>
+                        </div>
+
+                        <!-- Recent Attendance Reference -->
+                        @if (recentAttendance != null && recentAttendance.Any())
+                        {
+                            <div class="card mb-4 border-info">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-clock-history"></i> Your Recent Attendance (Reference)
+                                    </h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                        <table class="table table-sm table-striped mb-0">
+                                            <thead class="table-dark sticky-top">
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Clock In</th>
+                                                    <th>Clock Out</th>
+                                                    <th>Duration</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var record in recentAttendance.Take(10))
+                                                {
+                                                    <tr>
+                                                        <td>@record.EntryTime?.ToString("MMM dd, yyyy")</td>
+                                                        <td>@(record.EntryTime?.ToString("hh:mm tt") ?? "-")</td>
+                                                        <td>@(record.ExitTime?.ToString("hh:mm tt") ?? "-")</td>
+                                                        <td>
+                                                            @if (record.Duration.HasValue)
+                                                            {
+                                                                @($"{(record.Duration.Value / 60.0):F1} hrs")
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="text-muted">-</span>
+                                                            }
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Submission Notice -->
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Note:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Your request will be reviewed by your manager or HR</li>
+                                <li>You will be notified when your request is approved or rejected</li>
+                                <li>False or fraudulent requests may result in disciplinary action</li>
+                            </ul>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <div>
+                                <a asp-action="MyCorrectionRequests" class="btn btn-info me-2">
+                                    <i class="bi bi-list-check"></i> My Requests
+                                </a>
+                                <button type="submit" class="btn btn-warning btn-lg">
+                                    <i class="bi bi-send"></i> Submit Request
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const correctionType = document.getElementById('correctionType');
+            const timeFields = document.getElementById('timeFields');
+
+            correctionType.addEventListener('change', function() {
+                const showTimeFields = [
+                    'Wrong Clock In Time',
+                    'Wrong Clock Out Time',
+                    'Missing Full Day',
+                    'Missing Clock In',
+                    'Missing Clock Out'
+                ];
+
+                if (showTimeFields.includes(this.value)) {
+                    timeFields.style.display = 'block';
+                } else {
+                    timeFields.style.display = 'none';
+                }
+            });
+
+            // Validate reason length
+            const reasonField = document.querySelector('textarea[name="Reason"]');
+            const form = document.querySelector('form');
+
+            form.addEventListener('submit', function(e) {
+                if (reasonField.value.trim().length < 10) {
+                    e.preventDefault();
+                    alert('Please provide a more detailed reason (at least 10 characters).');
+                    reasonField.focus();
+                }
+            });
+        });
+    </script>
+}

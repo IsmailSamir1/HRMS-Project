@@ -1,0 +1,198 @@
+﻿@{
+    ViewData["Title"] = "Create Shift Cycle";
+    var shifts = ViewBag.Shifts as List<WebApplication1.Models.ShiftSchedule>;
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="bi bi-arrow-repeat"></i> Create Shift Cycle
+                    </h4>
+                    <small>HR Admin - Configure a new rotational shift cycle</small>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> @ViewBag.Error
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <!-- Info Box -->
+                    <div class="alert alert-warning">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Shift Cycle:</strong> A shift cycle defines the rotation order of shifts that employees will follow.
+                        Select multiple shifts to create a rotation pattern.
+                    </div>
+
+                    <form method="post" asp-action="CreateCycle">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Cycle Name -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-tag"></i> Cycle Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="CycleName" class="form-control" placeholder="e.g., Weekly Rotation, 3-Shift Rotation" required />
+                            <small class="text-muted">Enter a descriptive name for this shift cycle</small>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="bi bi-text-paragraph"></i> Description
+                            </label>
+                            <textarea name="Description" class="form-control" rows="2" placeholder="Describe this rotation pattern..."></textarea>
+                            <small class="text-muted">Optional: Describe how this rotation works</small>
+                        </div>
+
+                        <!-- Shift Selection -->
+                        <div class="card mb-4 border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-list-check"></i> Select Shifts for Rotation
+                                    <span class="text-warning">*</span>
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small mb-3">
+                                    Select the shifts in the order they should rotate. Hold <kbd>Ctrl</kbd> (or <kbd>Cmd</kbd> on Mac) to select multiple shifts.
+                                    The order you select them will be the rotation order.
+                                </p>
+
+                                @if (shifts == null || shifts.Count == 0)
+                                {
+                                    <div class="alert alert-warning mb-0">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        No active shifts available. Please create shifts first.
+                                        <a asp-action="Create" class="alert-link">Create Shift</a>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="row">
+                                        @foreach (var shift in shifts)
+                                        {
+                                            <div class="col-md-6 mb-2">
+                                                <div class="form-check">
+                                                    <input class="form-check-input shift-checkbox" type="checkbox"
+                                                           name="ShiftIds" value="@shift.ShiftId" id="shift_@shift.ShiftId" />
+                                                    <label class="form-check-label" for="shift_@shift.ShiftId">
+                                                        <strong>@shift.Name</strong>
+                                                        <br />
+                                                        <small class="text-muted">
+                                                            @if (shift.Type != null)
+                                                            {
+                                                                <span class="badge bg-secondary me-1">@shift.Type</span>
+                                                            }
+                                                            @if (shift.StartTime.HasValue && shift.EndTime.HasValue)
+                                                            {
+                                                                <text>@shift.StartTime.Value.ToString("hh:mm tt") - @shift.EndTime.Value.ToString("hh:mm tt")</text>
+                                                            }
+                                                        </small>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Selected Shifts Preview -->
+                        <div class="card mb-4 border-success" id="previewCard" style="display: none;">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0"><i class="bi bi-eye"></i> Rotation Order Preview</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex flex-wrap align-items-center" id="rotationPreview">
+                                    <!-- Filled by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Example -->
+                        <div class="alert alert-info">
+                            <i class="bi bi-lightbulb"></i>
+                            <strong>Example:</strong> If you select Morning Shift → Afternoon Shift → Night Shift,
+                            employees will work:
+                            <ul class="mb-0 mt-2">
+                                <li>Week 1: Morning Shift</li>
+                                <li>Week 2: Afternoon Shift</li>
+                                <li>Week 3: Night Shift</li>
+                                <li>Week 4: Back to Morning Shift (cycle repeats)</li>
+                            </ul>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="ConfigureRotational" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-warning btn-lg" @(shifts == null || shifts.Count == 0 ? "disabled" : "")>
+                                <i class="bi bi-check-circle"></i> Create Shift Cycle
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkboxes = document.querySelectorAll('.shift-checkbox');
+            const previewCard = document.getElementById('previewCard');
+            const rotationPreview = document.getElementById('rotationPreview');
+
+            function updatePreview() {
+                const selected = [];
+                checkboxes.forEach((checkbox, index) => {
+                    if (checkbox.checked) {
+                        const label = document.querySelector(`label[for="${checkbox.id}"] strong`).textContent;
+                        selected.push({ id: checkbox.value, name: label });
+                    }
+                });
+
+                if (selected.length > 0) {
+                    previewCard.style.display = 'block';
+                    rotationPreview.innerHTML = '';
+
+                    selected.forEach((shift, index) => {
+                        const badge = document.createElement('span');
+                        badge.className = 'badge bg-primary fs-6 me-2 mb-2';
+                        badge.innerHTML = `<i class="bi bi-${index + 1}-circle me-1"></i>${shift.name}`;
+                        rotationPreview.appendChild(badge);
+
+                        if (index < selected.length - 1) {
+                            const arrow = document.createElement('span');
+                            arrow.className = 'text-muted me-2 mb-2';
+                            arrow.innerHTML = '<i class="bi bi-arrow-right"></i>';
+                            rotationPreview.appendChild(arrow);
+                        }
+                    });
+
+                    // Add cycle indicator
+                    if (selected.length > 1) {
+                        const cycleIndicator = document.createElement('span');
+                        cycleIndicator.className = 'text-warning ms-2 mb-2';
+                        cycleIndicator.innerHTML = '<i class="bi bi-arrow-repeat"></i> (repeats)';
+                        rotationPreview.appendChild(cycleIndicator);
+                    }
+                } else {
+                    previewCard.style.display = 'none';
+                }
+            }
+
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updatePreview);
+            });
+        });
+    </script>
+}

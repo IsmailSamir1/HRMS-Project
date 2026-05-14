@@ -1,0 +1,67 @@
+﻿@{
+    ViewData["Title"] = "Create Skill";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1"><i class="bi bi-plus-circle text-primary me-2"></i>Create New Skill</h2>
+                    <p class="text-muted mb-0">Add a new skill to the organization directory</p>
+                </div>
+                <a asp-action="SkillsDirectory" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back
+                </a>
+            </div>
+
+            <!-- Form -->
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <form asp-action="CreateSkill" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Skill Name <span class="text-danger">*</span></label>
+                            <input type="text" name="skillName" class="form-control" required
+                                   placeholder="e.g., Project Management, Python, Communication" />
+                            <small class="text-muted">Enter a unique skill name</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Description</label>
+                            <textarea name="description" class="form-control" rows="3"
+                                      placeholder="Describe what this skill involves..."></textarea>
+                            <small class="text-muted">Optional: Provide a brief description of the skill</small>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-action="SkillsDirectory" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i> Create Skill
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div class="card shadow-sm border-0 mt-4">
+                <div class="card-header bg-info bg-opacity-10 border-0">
+                    <h6 class="mb-0"><i class="bi bi-lightbulb me-2"></i>Tips for Adding Skills</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0 small">
+                        <li class="mb-2">Use clear, specific skill names (e.g., "JavaScript" instead of "Programming")</li>
+                        <li class="mb-2">Consider both technical and soft skills</li>
+                        <li class="mb-2">Add descriptions to help employees understand what each skill entails</li>
+                        <li>Employees can then add these skills to their profiles with proficiency levels</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

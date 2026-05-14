@@ -1,0 +1,182 @@
+﻿@{
+    ViewData["Title"] = "Analytics Dashboard";
+    int totalEmployees = ViewBag.TotalEmployees ?? 0;
+    int activeEmployees = ViewBag.ActiveEmployees ?? 0;
+    int totalDepartments = ViewBag.TotalDepartments ?? 0;
+    int totalPositions = ViewBag.TotalPositions ?? 0;
+    int inactiveEmployees = totalEmployees - activeEmployees;
+}
+
+<div class="container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-bar-chart-line"></i> Analytics Dashboard</h2>
+            <p class="text-muted mb-0">HR Admin - Employee Statistics & Reports</p>
+        </div>
+        <div>
+            <a asp-action="Index" asp-controller="Home" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-primary text-white shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-people display-4"></i>
+                    <h2 class="mt-2 mb-0">@totalEmployees</h2>
+                    <p class="mb-0">Total Employees</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success text-white shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-person-check display-4"></i>
+                    <h2 class="mt-2 mb-0">@activeEmployees</h2>
+                    <p class="mb-0">Active Employees</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-warning text-dark shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-building display-4"></i>
+                    <h2 class="mt-2 mb-0">@totalDepartments</h2>
+                    <p class="mb-0">Departments</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info text-white shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-briefcase display-4"></i>
+                    <h2 class="mt-2 mb-0">@totalPositions</h2>
+                    <p class="mb-0">Positions</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Options -->
+    <div class="row">
+        <!-- Department Statistics -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow h-100 border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Department Statistics</h5>
+                </div>
+                <div class="card-body text-center">
+                    <i class="bi bi-diagram-3 display-1 text-primary mb-3"></i>
+                    <p class="card-text">View employee distribution across all departments.</p>
+                    <p class="text-muted small">Uses: GetDepartmentEmployeeStats procedure</p>
+                </div>
+                <div class="card-footer bg-transparent border-0 text-center pb-3">
+                    <a asp-action="DepartmentStats" class="btn btn-primary btn-lg">
+                        <i class="bi bi-bar-chart"></i> View Department Stats
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compliance Report -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow h-100 border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Compliance Report</h5>
+                </div>
+                <div class="card-body text-center">
+                    <i class="bi bi-file-earmark-text display-1 text-success mb-3"></i>
+                    <p class="card-text">Search and filter employees by department, position, status, or country.</p>
+                    <p class="text-muted small">Uses: GenerateProfileReport procedure</p>
+                </div>
+                <div class="card-footer bg-transparent border-0 text-center pb-3">
+                    <a asp-action="ComplianceReport" class="btn btn-success btn-lg">
+                        <i class="bi bi-search"></i> Generate Report
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Diversity Report -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow h-100 border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-globe"></i> Diversity Report</h5>
+                </div>
+                <div class="card-body text-center">
+                    <i class="bi bi-globe-americas display-1 text-info mb-3"></i>
+                    <p class="card-text">View workforce diversity by country of origin and department.</p>
+                    <p class="text-muted small">Diversity & Inclusion Statistics</p>
+                </div>
+                <div class="card-footer bg-transparent border-0 text-center pb-3">
+                    <a asp-action="DiversityReport" class="btn btn-info btn-lg">
+                        <i class="bi bi-pie-chart-fill"></i> View Diversity
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> Quick Overview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="p-3">
+                                <h4 class="text-success">
+                                    @if (totalEmployees > 0)
+                                    {
+                                        @(Math.Round((double)activeEmployees / totalEmployees * 100, 1))
+                                    
+                                        @:%
+                                    }
+                                    else
+                                    {
+                                        @:0%
+                                    }
+                                </h4>
+                                <p class="text-muted mb-0">Active Employee Rate</p>
+                                <div class="progress mt-2" style="height: 10px;">
+                                    <div class="progress-bar bg-success" role="progressbar"
+                                         style="width: @(totalEmployees > 0 ? (double)activeEmployees / totalEmployees * 100 : 0)%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3">
+                                <h4 class="text-primary">
+                                    @if (totalDepartments > 0)
+                                    {
+                                        @(Math.Round((double)totalEmployees / totalDepartments, 1))
+                                    }
+                                    else
+                                    {
+                                        @:0
+                                    }
+                                </h4>
+                                <p class="text-muted mb-0">Avg. Employees per Department</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3">
+                                <h4 class="text-warning">@inactiveEmployees</h4>
+                                <p class="text-muted mb-0">Inactive Employees</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+```
+

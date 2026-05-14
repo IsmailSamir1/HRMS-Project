@@ -1,0 +1,327 @@
+﻿@model WebApplication1.Models.ShiftAssignment
+@{
+    ViewData["Title"] = "Edit Shift Assignment";
+    var shifts = ViewBag.Shifts as List<WebApplication1.Models.ShiftSchedule>;
+
+    // Convert DateOnly to string for input fields
+    string startDateValue = Model.StartDate.HasValue ? Model.StartDate.Value.ToString("yyyy-MM-dd") : "";
+    string endDateValue = Model.EndDate.HasValue ? Model.EndDate.Value.ToString("yyyy-MM-dd") : "";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="bi bi-pencil"></i> Edit Shift Assignment #@Model.AssignmentId
+                    </h4>
+                    <small>System Admin - Update shift assignment details</small>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> @ViewBag.Error
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <!-- Employee Info (Read-only) -->
+                    <div class="card mb-4 border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="bi bi-person"></i> Employee Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-2 text-center">
+                                    @if (!string.IsNullOrEmpty(Model.Employee?.ProfileImage))
+                                    {
+                                        <img src="@Model.Employee.ProfileImage" alt="@Model.Employee.FullName"
+                                             class="rounded-circle" style="width: 60px; height: 60px; object-fit: cover;" />
+                                    }
+                                    else
+                                    {
+                                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center mx-auto"
+                                             style="width: 60px; height: 60px;">
+                                            <span class="text-white fs-4">
+                                                @(Model.Employee?.FirstName?.Substring(0, 1).ToUpper())@(Model.Employee?.LastName?.Substring(0, 1).ToUpper())
+                                            </span>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="col-md-10">
+                                    <h5 class="mb-1">@(Model.Employee?.FullName ?? "Unknown Employee")</h5>
+                                    <p class="mb-0 text-muted">
+                                        <i class="bi bi-envelope me-1"></i> @(Model.Employee?.Email ?? "N/A")
+                                        @if (!string.IsNullOrEmpty(Model.Employee?.Phone))
+                                        {
+                                            <span class="ms-3"><i class="bi bi-telephone me-1"></i> @Model.Employee.Phone</span>
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post" asp-action="EditAssignment">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="AssignmentId" value="@Model.AssignmentId" />
+
+                        <!-- Shift Selection -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-clock"></i> Shift <span class="text-danger">*</span>
+                            </label>
+                            <select name="ShiftId" class="form-select" required id="shiftSelect">
+                                <option value="">-- Select Shift --</option>
+                                @if (shifts != null)
+                                {
+                                    @foreach (var shift in shifts)
+                                    {
+                                        string shiftInfo = $"{shift.Name} ({shift.Type}) - ";
+                                        if (shift.StartTime.HasValue && shift.EndTime.HasValue)
+                                        {
+                                            shiftInfo += $"{shift.StartTime.Value.ToString("hh:mm tt")} to {shift.EndTime.Value.ToString("hh:mm tt")}";
+                                        }
+                                        bool isSelected = shift.ShiftId == Model.ShiftId;
+                                        <option value="@shift.ShiftId"
+                                                selected="@isSelected"
+                                                data-type="@shift.Type"
+                                                data-start="@(shift.StartTime.HasValue ? shift.StartTime.Value.ToString("hh:mm tt") : "")"
+                                                data-end="@(shift.EndTime.HasValue ? shift.EndTime.Value.ToString("hh:mm tt") : "")"
+                                                data-break="@shift.BreakDuration">
+                                            @shiftInfo
+                                        </option>
+                                    }
+                                }
+                            </select>
+                            <small class="text-muted">Select the shift to assign</small>
+                        </div>
+
+                        <!-- Shift Preview -->
+                        <div class="card mb-3 border-info" id="shiftPreview">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0"><i class="bi bi-eye"></i> Shift Preview</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-md-3">
+                                        <i class="bi bi-diagram-3 display-6 text-primary"></i>
+                                        <p class="mb-0 mt-2"><strong>Type</strong></p>
+                                        <p class="mb-0" id="previewType">
+                                            @if (Model.Shift != null)
+                                            {
+                                                @if (Model.Shift.Type == "Normal")
+                                                {
+                                                    <span class="badge bg-primary">Normal</span>
+                                                }
+                                                else if (Model.Shift.Type == "Split")
+                                                {
+                                                    <span class="badge bg-info">Split</span>
+                                                }
+                                                else if (Model.Shift.Type == "Rotational")
+                                                {
+                                                    <span class="badge bg-warning text-dark">Rotational</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">@Model.Shift.Type</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <text>-</text>
+                                            }
+                                        </p>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <i class="bi bi-sunrise display-6 text-success"></i>
+                                        <p class="mb-0 mt-2"><strong>Start</strong></p>
+                                        <p class="mb-0" id="previewStart">
+                                            @(Model.Shift?.StartTime?.ToString("hh:mm tt") ?? "-")
+                                        </p>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <i class="bi bi-sunset display-6 text-danger"></i>
+                                        <p class="mb-0 mt-2"><strong>End</strong></p>
+                                        <p class="mb-0" id="previewEnd">
+                                            @(Model.Shift?.EndTime?.ToString("hh:mm tt") ?? "-")
+                                        </p>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <i class="bi bi-cup-hot display-6 text-warning"></i>
+                                        <p class="mb-0 mt-2"><strong>Break</strong></p>
+                                        <p class="mb-0" id="previewBreak">
+                                            @(Model.Shift?.BreakDuration.HasValue == true && Model.Shift.BreakDuration > 0 ? $"{Model.Shift.BreakDuration} min" : "None")
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Date Range -->
+                        <div class="card mb-3 border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="bi bi-calendar-range"></i> Assignment Period</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="bi bi-calendar-event"></i> Start Date <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="date" name="StartDate" class="form-control" value="@startDateValue" required />
+                                        <small class="text-muted">When does this assignment start?</small>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="bi bi-calendar-check"></i> End Date
+                                        </label>
+                                        <input type="date" name="EndDate" class="form-control" value="@endDateValue" />
+                                        <small class="text-muted">Leave empty for ongoing assignment</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="card mb-3 border-success">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0"><i class="bi bi-toggle-on"></i> Assignment Status</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label">
+                                            <i class="bi bi-flag"></i> Status <span class="text-danger">*</span>
+                                        </label>
+                                        <select name="Status" class="form-select" required>
+                                            <option value="Active" selected="@(Model.Status == "Active")">Active</option>
+                                            <option value="Inactive" selected="@(Model.Status == "Inactive")">Inactive</option>
+                                            <option value="Suspended" selected="@(Model.Status == "Suspended")">Suspended</option>
+                                            <option value="Completed" selected="@(Model.Status == "Completed")">Completed</option>
+                                        </select>
+                                        <small class="text-muted">Set assignment status</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Current Status</label>
+                                        <div class="mt-2">
+                                            @if (Model.Status == "Active")
+                                            {
+                                                <span class="badge bg-success fs-6">
+                                                    <i class="bi bi-check-circle"></i> Active
+                                                </span>
+                                            }
+                                            else if (Model.Status == "Inactive")
+                                            {
+                                                <span class="badge bg-secondary fs-6">
+                                                    <i class="bi bi-x-circle"></i> Inactive
+                                                </span>
+                                            }
+                                            else if (Model.Status == "Suspended")
+                                            {
+                                                <span class="badge bg-warning text-dark fs-6">
+                                                    <i class="bi bi-pause-circle"></i> Suspended
+                                                </span>
+                                            }
+                                            else if (Model.Status == "Completed")
+                                            {
+                                                <span class="badge bg-primary fs-6">
+                                                    <i class="bi bi-flag"></i> Completed
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary fs-6">@Model.Status</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Info Box -->
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Note:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>If the shift is changed, the employee will receive a notification</li>
+                                <li>Setting status to "Inactive" will effectively pause the assignment</li>
+                                <li>Leave end date empty for permanent/ongoing assignments</li>
+                            </ul>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Assignments" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <div>
+                                <a asp-action="DeleteAssignment" asp-route-id="@Model.AssignmentId" class="btn btn-danger me-2">
+                                    <i class="bi bi-trash"></i> Delete Assignment
+                                </a>
+                                <button type="submit" class="btn btn-warning btn-lg">
+                                    <i class="bi bi-check-circle"></i> Update Assignment
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const shiftSelect = document.getElementById('shiftSelect');
+            const previewType = document.getElementById('previewType');
+            const previewStart = document.getElementById('previewStart');
+            const previewEnd = document.getElementById('previewEnd');
+            const previewBreak = document.getElementById('previewBreak');
+
+            shiftSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+
+                if (this.value) {
+                    const type = selectedOption.getAttribute('data-type');
+                    const start = selectedOption.getAttribute('data-start');
+                    const end = selectedOption.getAttribute('data-end');
+                    const breakDuration = selectedOption.getAttribute('data-break');
+
+                    previewStart.textContent = start || '-';
+                    previewEnd.textContent = end || '-';
+                    previewBreak.textContent = breakDuration ? breakDuration + ' min' : 'None';
+
+                    // Add badge styling for type
+                    if (type === 'Normal') {
+                        previewType.innerHTML = '<span class="badge bg-primary">Normal</span>';
+                    } else if (type === 'Split') {
+                        previewType.innerHTML = '<span class="badge bg-info">Split</span>';
+                    } else if (type === 'Rotational') {
+                        previewType.innerHTML = '<span class="badge bg-warning text-dark">Rotational</span>';
+                    } else if (type === 'Custom') {
+                        previewType.innerHTML = '<span class="badge bg-secondary">Custom</span>';
+                    } else {
+                        previewType.innerHTML = '<span class="badge bg-secondary">' + type + '</span>';
+                    }
+                }
+            });
+
+            // Ensure end date is after start date
+            const startDateInput = document.querySelector('input[name="StartDate"]');
+            const endDateInput = document.querySelector('input[name="EndDate"]');
+
+            if (startDateInput && endDateInput) {
+                startDateInput.addEventListener('change', function() {
+                    endDateInput.setAttribute('min', this.value);
+                    if (endDateInput.value && endDateInput.value < this.value) {
+                        endDateInput.value = this.value;
+                    }
+                });
+            }
+        });
+    </script>
+}

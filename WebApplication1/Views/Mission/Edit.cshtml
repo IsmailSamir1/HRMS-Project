@@ -1,0 +1,151 @@
+﻿@model WebApplication1.Models.Mission
+@{
+    ViewData["Title"] = "Edit Mission";
+    var employees = ViewBag.Employees as List<WebApplication1.Models.Employee>;
+    var managers = ViewBag.Managers as List<WebApplication1.Models.Employee>;
+
+    // Convert DateOnly to string format for input fields
+    string startDateValue = Model.StartDate.HasValue ? Model.StartDate.Value.ToString("yyyy-MM-dd") : "";
+    string endDateValue = Model.EndDate.HasValue ? Model.EndDate.Value.ToString("yyyy-MM-dd") : "";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="bi bi-pencil"></i> Edit Mission #@Model.MissionId
+                    </h4>
+                    <small>HR Admin - Update mission details</small>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> @ViewBag.Error
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <form method="post" asp-action="Edit">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="MissionId" value="@Model.MissionId" />
+
+                        <!-- Destination -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-geo-alt"></i> Destination <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="Destination" class="form-control" value="@Model.Destination" placeholder="Enter mission destination" required />
+                            <small class="text-muted">Where will the employee be going?</small>
+                        </div>
+
+                        <!-- Employee -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-person"></i> Employee <span class="text-danger">*</span>
+                            </label>
+                            <select name="EmployeeId" class="form-select" required>
+                                <option value="">-- Select Employee --</option>
+                                @if (employees != null)
+                                {
+                                    @foreach (var emp in employees)
+                                    {
+                                        bool isSelected = emp.EmployeeId == Model.EmployeeId;
+                                        <option value="@emp.EmployeeId" selected="@isSelected">@emp.FullName (@emp.Email)</option>
+                                    }
+                                }
+                            </select>
+                            <small class="text-muted">Which employee is assigned to this mission?</small>
+                        </div>
+
+                        <!-- Manager (Approver) -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-person-badge"></i> Approving Manager
+                            </label>
+                            <select name="ManagerId" class="form-select">
+                                <option value="">-- Select Manager (Optional) --</option>
+                                @if (managers != null)
+                                {
+                                    @foreach (var mgr in managers)
+                                    {
+                                        bool isSelected = mgr.EmployeeId == Model.ManagerId;
+                                        <option value="@mgr.EmployeeId" selected="@isSelected">@mgr.FullName (@mgr.Email)</option>
+                                    }
+                                }
+                            </select>
+                            <small class="text-muted">Which manager will approve/reject this mission?</small>
+                        </div>
+
+                        <!-- Start Date -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-calendar-event"></i> Start Date <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" name="StartDate" class="form-control" value="@startDateValue" required />
+                                <small class="text-muted">When does the mission start?</small>
+                            </div>
+
+                            <!-- End Date -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-calendar-check"></i> End Date
+                                </label>
+                                <input type="date" name="EndDate" class="form-control" value="@endDateValue" />
+                                <small class="text-muted">When does the mission end? (Optional)</small>
+                            </div>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-flag"></i> Status <span class="text-danger">*</span>
+                            </label>
+                            <select name="Status" class="form-select" required>
+                                <option value="Pending" selected="@(Model.Status == "Pending")">Pending</option>
+                                <option value="Approved" selected="@(Model.Status == "Approved")">Approved</option>
+                                <option value="Rejected" selected="@(Model.Status == "Rejected")">Rejected</option>
+                                <option value="Completed" selected="@(Model.Status == "Completed")">Completed</option>
+                                <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
+                            </select>
+                            <small class="text-muted">Current status of the mission</small>
+                        </div>
+
+                        <!-- Current Status Display -->
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Current Status:</strong>
+                            @{
+                                string badgeClass = "bg-secondary";
+                                if (Model.Status == "Pending") badgeClass = "bg-warning text-dark";
+                                else if (Model.Status == "Approved") badgeClass = "bg-success";
+                                else if (Model.Status == "Rejected") badgeClass = "bg-danger";
+                                else if (Model.Status == "Completed") badgeClass = "bg-primary";
+                                else if (Model.Status == "Cancelled") badgeClass = "bg-secondary";
+                            }
+                            <span class="badge @badgeClass ms-2">@Model.Status</span>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <div>
+                                <a asp-action="Details" asp-route-id="@Model.MissionId" class="btn btn-info me-2">
+                                    <i class="bi bi-eye"></i> View Details
+                                </a>
+                                <button type="submit" class="btn btn-warning btn-lg">
+                                    <i class="bi bi-check-circle"></i> Update Mission
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

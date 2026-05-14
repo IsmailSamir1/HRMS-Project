@@ -1,0 +1,94 @@
+﻿@model WebApplication1.Models.Employee
+@{
+    ViewData["Title"] = "Assign Role";
+    var roles = ViewBag.Roles as List<WebApplication1.Models.Role>;
+    string currentRole = ViewBag.CurrentRole as string;
+    string employeeName = ViewBag.EmployeeName as string;
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6 animate-slide-up animate-delay-1">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-shield-check"></i> Assign System Role
+                    </h4>
+                    <small>System Admin - Role Assignment</small>
+                </div>
+                <div class="card-body">
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> @TempData["Error"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <div class="mb-4">
+                        <h5>Employee: <strong>@employeeName</strong></h5>
+                        <p class="text-muted mb-0">
+                            Current Role:
+                            @if (!string.IsNullOrEmpty(currentRole))
+                            {
+                                <span class="badge bg-info">
+                                    @currentRole.Replace("_", " ")
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">No role assigned</span>
+                            }
+                        </p>
+                    </div>
+
+                    <form method="post" asp-action="AssignRole">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="EmployeeId" value="@Model.EmployeeId" />
+
+                        <div class="mb-3">
+                            <label class="form-label">Select New Role <span class="text-danger">*</span></label>
+                            <select name="NewRole" class="form-select" required>
+                                <option value="">-- Select Role --</option>
+                                @if (roles != null)
+                                {
+                                    @foreach (var role in roles)
+                                    {
+                                        string displayName = role.RoleName switch
+                                        {
+                                            "SYS_ADMIN" => "System Administrator",
+                                            "HR_ADMIN" => "HR Administrator",
+                                            "LINE_MANAGER" => "Line Manager",
+                                            "EMPLOYEE" => "Employee",
+                                            _ => role.RoleName
+                                        };
+
+                                        bool isSelected = currentRole == role.RoleName;
+                                        <option value="@displayName" selected="@isSelected">
+                                            @displayName
+                                        </option>
+                                    }
+                                }
+                            </select>
+                            <small class="text-muted">Choose the system role to assign to this employee</small>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Warning:</strong> Changing an employee's role will update their access permissions immediately.
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-controller="Home" asp-action="AllEmployees" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-shield-check"></i> Assign Role
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

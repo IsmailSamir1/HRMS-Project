@@ -1,0 +1,559 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#667eea" />
+    <meta name="description" content="HRMS - Human Resource Management System" />
+
+    <title>@ViewData["Title"] · HRMS</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Site CSS -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/WebApplication1.styles.css" asp-append-version="true" />
+
+    <style>
+        body {
+            font-family: 'Inter', var(--font-family);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- PAGE LOADER -->
+    <div id="pageLoader">
+        <div class="page-loader-content">
+            <div class="page-loader-spinner"></div>
+            <p class="page-loader-text">Loading HRMS...</p>
+        </div>
+    </div>
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm sticky-top">
+        <div class="container-fluid">
+
+            <!-- Brand -->
+            <a class="navbar-brand fw-bold" asp-controller="Home" asp-action="Index">
+                <i class="bi bi-buildings me-1"></i> HRMS
+            </a>
+
+            <button class="navbar-toggler border-0"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#navbarMain"
+                    aria-controls="navbarMain"
+                    aria-expanded="false"
+                    aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarMain">
+
+                <!-- LEFT MENU -->
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+                    @if (Context.Session.GetInt32("EmployeeId") != null)
+                    {
+                        <!-- Dashboard -->
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">
+                                <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                            </a>
+                        </li>
+
+                        <!-- Missions -->
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Mission" asp-action="Index">
+                                <i class="bi bi-geo-alt me-1"></i> Missions
+                            </a>
+                        </li>
+
+                        <!-- Shifts -->
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Shift" asp-action="Index">
+                                <i class="bi bi-clock me-1"></i> Shifts
+                            </a>
+                        </li>
+
+                        <!-- Attendance -->
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Attendance" asp-action="Index">
+                                <i class="bi bi-calendar-check me-1"></i> Attendance
+                            </a>
+                        </li>
+
+                        <!-- Leave Dropdown -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="leaveDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-calendar-heart me-1"></i> Leave
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="leaveDropdown">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Leave" asp-action="Index">
+                                        <i class="bi bi-list-ul me-2 text-primary"></i> All Requests
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Leave" asp-action="Create">
+                                        <i class="bi bi-plus-circle me-2 text-success"></i> Request Leave
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Leave" asp-action="MyLeaveRequests">
+                                        <i class="bi bi-clock-history me-2 text-info"></i> My Requests
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Leave" asp-action="MyBalance">
+                                        <i class="bi bi-pie-chart me-2 text-warning"></i> My Balance
+                                    </a>
+                                </li>
+                                @if (Context.Session.GetString("IsLineManager") == "True" ||
+                                                            Context.Session.GetString("IsSystemAdmin") == "True" ||
+                                                            Context.Session.GetString("IsHRAdmin") == "True")
+                                {
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li class="dropdown-header">
+                                        <i class="bi bi-shield-check"></i> Manager Tools
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Leave" asp-action="TeamPendingRequests">
+                                            <i class="bi bi-hourglass-split me-2 text-warning"></i> Pending Approvals
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Leave" asp-action="TeamCalendar">
+                                            <i class="bi bi-calendar3 me-2 text-info"></i> Team Calendar
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Leave" asp-action="LeavePatterns">
+                                            <i class="bi bi-exclamation-triangle me-2 text-danger"></i> Leave Patterns
+                                        </a>
+                                    </li>
+                                }
+                                @if (Context.Session.GetString("IsSystemAdmin") == "True" ||
+                                                            Context.Session.GetString("IsHRAdmin") == "True")
+                                {
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li class="dropdown-header">
+                                        <i class="bi bi-gear"></i> HR Admin
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Leave" asp-action="LeaveTypes">
+                                            <i class="bi bi-tags me-2 text-primary"></i> Leave Types
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Leave" asp-action="ManageEntitlements">
+                                            <i class="bi bi-sliders me-2 text-success"></i> Manage Entitlements
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Leave" asp-action="SpecialLeaveReport">
+                                            <i class="bi bi-star me-2 text-warning"></i> Special Leave Report
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </li>
+
+                        <!-- Performance -->
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Performance" asp-action="Index">
+                                <i class="bi bi-graph-up-arrow me-1"></i> Performance
+                            </a>
+                        </li>
+
+                        <!-- System Admin Only -->
+                        @if (Context.Session.GetString("IsSystemAdmin") == "True")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Account" asp-action="CreateEmployee">
+                                    <i class="bi bi-person-plus me-1"></i> Create Employee
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Hierarchy" asp-action="Index">
+                                    <i class="bi bi-diagram-3 me-1"></i> Hierarchy
+                                </a>
+                            </li>
+                        }
+
+                        <!-- HR Admin Only -->
+                        @if (Context.Session.GetString("IsHRAdmin") == "True")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Home" asp-action="AllEmployees">
+                                    <i class="bi bi-people me-1"></i> All Employees
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Analytics" asp-action="Index">
+                                    <i class="bi bi-bar-chart-line me-1"></i> Analytics
+                                </a>
+                            </li>
+                        }
+
+                        <!-- Line Manager Only -->
+                        @if (Context.Session.GetString("IsLineManager") == "True")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Notifications" asp-action="Send">
+                                    <i class="bi bi-send me-1"></i> Send to Team
+                                </a>
+                            </li>
+                        }
+                    }
+
+                </ul>
+
+                <!-- RIGHT MENU -->
+                <ul class="navbar-nav ms-auto align-items-center">
+
+                    @if (Context.Session.GetInt32("EmployeeId") != null)
+                    {
+                        <!-- Dark Mode Toggle -->
+                        <li class="nav-item me-2">
+                            <button class="dark-mode-toggle" id="darkModeToggle" data-bs-toggle="tooltip" title="Toggle Dark Mode">
+                                <i class="bi bi-moon-fill" id="darkModeIcon"></i>
+                            </button>
+                        </li>
+
+                        <!-- Quick Clock In -->
+                        <li class="nav-item me-2 d-none d-lg-block">
+                            <a asp-controller="Attendance" asp-action="ClockIn" class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip" title="Clock In">
+                                <i class="bi bi-box-arrow-in-right"></i>
+                            </a>
+                        </li>
+
+                        <!-- Notifications Dropdown -->
+                        <li class="nav-item dropdown me-2">
+                            <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-bell-fill fs-5"></i>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationBadge" style="display: none; font-size: 0.65rem;">
+                                    0
+                                </span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end shadow p-0" aria-labelledby="notificationDropdown" style="width: 350px; max-height: 450px; overflow-y: auto;">
+                                <div class="bg-gradient-primary text-white py-2 px-3 fw-bold d-flex justify-content-between align-items-center" style="background: var(--primary-gradient);">
+                                    <span><i class="bi bi-bell me-2"></i>Notifications</span>
+                                    <span class="badge bg-light text-primary" id="notificationCountText">0 New</span>
+                                </div>
+                                <div id="notificationList" class="list-group list-group-flush">
+                                    <div class="text-center py-3 text-muted">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                        <p class="mb-0 small mt-2">Loading...</p>
+                                    </div>
+                                </div>
+                                <div class="border-top p-2 text-center">
+                                    <a asp-controller="Notifications" asp-action="Index" class="btn btn-sm btn-link text-decoration-none">
+                                        View All Notifications <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </li>
+
+                        <!-- User Dropdown -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="bg-gradient-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 36px; height: 36px; background: var(--primary-gradient);">
+                                    <span class="text-white fw-bold" style="font-size: 0.85rem;">
+                                        @{
+                                            var userName = Context.Session.GetString("EmployeeName") ?? "U";
+                                            var userInitial = userName.Length > 0 ? userName.Substring(0, 1).ToUpper() : "U";
+                                        }
+                                        @userInitial
+                                    </span>
+                                </div>
+                                <span class="d-none d-lg-inline">
+                                    @Context.Session.GetString("EmployeeName")
+                                    @if (Context.Session.GetString("IsSystemAdmin") == "True")
+                                    {
+                                        <span class="badge bg-danger ms-1">Admin</span>
+                                    }
+                                    else if (Context.Session.GetString("IsHRAdmin") == "True")
+                                    {
+                                        <span class="badge bg-warning text-dark ms-1">HR</span>
+                                    }
+                                    else if (Context.Session.GetString("IsLineManager") == "True")
+                                    {
+                                        <span class="badge bg-info ms-1">Manager</span>
+                                    }
+                                </span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdown" style="min-width: 250px;">
+                                <li class="px-3 py-2">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-gradient-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; background: var(--primary-gradient);">
+                                            <span class="text-white fw-bold fs-5">@userInitial</span>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">@Context.Session.GetString("EmployeeName")</h6>
+                                            <small class="text-muted">
+                                                @if (Context.Session.GetString("IsSystemAdmin") == "True")
+                                                {
+                                                    @:System Admin
+                                                }
+                                                else if (Context.Session.GetString("IsHRAdmin") == "True")
+                                                {
+                                                    @:HR Admin
+                                                }
+                                                else if (Context.Session.GetString("IsLineManager") == "True")
+                                                {
+                                                    @:Line Manager
+                                                }
+                                                else
+                                                {
+                                                    @:Employee
+                                                }
+                                            </small>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Employees" asp-action="Details" asp-route-id="@Context.Session.GetInt32("EmployeeId")">
+                                        <i class="bi bi-person me-2 text-primary"></i> View Profile
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Account" asp-action="Edit" asp-route-id="@Context.Session.GetInt32("EmployeeId")">
+                                        <i class="bi bi-pencil me-2 text-success"></i> Edit Profile
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Shift" asp-action="MyShifts">
+                                        <i class="bi bi-clock me-2 text-info"></i> My Shifts
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Leave" asp-action="MyLeaveRequests">
+                                        <i class="bi bi-calendar-heart me-2 text-danger"></i> My Leave
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Attendance" asp-action="MyCorrectionRequests">
+                                        <i class="bi bi-list-check me-2 text-warning"></i> My Requests
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <!-- Security Section -->
+                                <li class="dropdown-header">
+                                    <i class="bi bi-shield-lock"></i> Security
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword">
+                                        <i class="bi bi-key me-2 text-warning"></i> Change Password
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Account" asp-action="MyLoginActivity">
+                                        <i class="bi bi-clock-history me-2 text-info"></i> My Login Activity
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-danger" asp-controller="Account" asp-action="Logout">
+                                        <i class="bi bi-box-arrow-right me-2"></i> Logout
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    }
+                    else
+                    {
+                        <!-- Dark Mode Toggle for logged out users -->
+                        <li class="nav-item me-2">
+                            <button class="dark-mode-toggle" id="darkModeToggle">
+                                <i class="bi bi-moon-fill" id="darkModeIcon"></i>
+                            </button>
+                        </li>
+
+                        <!-- Register -->
+                        <li class="nav-item me-2">
+                            <a class="btn btn-outline-light btn-sm" asp-controller="Account" asp-action="RegisterAdmin">
+                                <i class="bi bi-person-plus me-1"></i> Register
+                            </a>
+                        </li>
+
+                        <!-- Login -->
+                        <li class="nav-item">
+                            <a class="btn btn-primary btn-sm" asp-controller="Account" asp-action="Login">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Login
+                            </a>
+                        </li>
+                    }
+
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- MAIN CONTENT -->
+    <div class="container-fluid px-4 my-4">
+        <!-- Breadcrumb -->
+        @if (ViewData["Title"] != null && ViewData["Title"].ToString() != "Dashboard")
+        {
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-controller="Home" asp-action="Index">
+                            <i class="bi bi-house-door"></i> Home
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">@ViewData["Title"]</li>
+                </ol>
+            </nav>
+        }
+
+        <!-- Alerts -->
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show animate-slide-down" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <strong>Success!</strong> @TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show animate-slide-down" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong>Error!</strong> @TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["Info"] != null)
+        {
+            <div class="alert alert-info alert-dismissible fade show animate-slide-down" role="alert">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                @TempData["Info"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <main role="main">
+            @RenderBody()
+        </main>
+    </div>
+
+    <!-- BACK TO TOP BUTTON -->
+    <button id="backToTop" data-bs-toggle="tooltip" title="Back to Top">
+        <i class="bi bi-chevron-up"></i>
+    </button>
+
+    <!-- FOOTER -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                    <h5 class="mb-2">
+                        <i class="bi bi-buildings me-2" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                        HRMS
+                    </h5>
+                    <small class="text-muted">Human Resource Management System</small>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <div class="mb-2">
+                        <span class="badge bg-secondary me-1"><i class="bi bi-shield-check"></i> Secure</span>
+                        <span class="badge bg-secondary me-1"><i class="bi bi-lock"></i> Role-Based</span>
+                        <span class="badge bg-secondary"><i class="bi bi-lightning"></i> Fast</span>
+                    </div>
+                    <small class="text-muted">© 2025 All rights reserved.</small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @if (Context.Session.GetInt32("EmployeeId") != null)
+    {
+        <script>
+            $(document).ready(function() {
+                loadNotificationCount();
+            });
+
+            function loadNotificationCount() {
+                $.ajax({
+                    url: '/Notifications/GetUnreadCount',
+                    type: 'GET',
+                    success: function(count) {
+                        var badge = $('#notificationBadge');
+                        var countText = $('#notificationCountText');
+                        if (count > 0) {
+                            badge.text(count > 99 ? '99+' : count);
+                            badge.show();
+                            countText.text(count + ' New');
+                        } else {
+                            badge.hide();
+                            countText.text('0 New');
+                        }
+                    },
+                    error: function() {
+                        $('#notificationBadge').hide();
+                    }
+                });
+            }
+
+            function loadNotificationList() {
+                var notificationList = $('#notificationList');
+                notificationList.html('<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>');
+                $.ajax({
+                    url: '/Notifications/GetNotifications',
+                    type: 'GET',
+                    success: function(notifications) {
+                        notificationList.empty();
+                        if (notifications && notifications.length > 0) {
+                            for (var i = 0; i < notifications.length; i++) {
+                                var n = notifications[i];
+                                var urgencyClass = n.urgency === 'High' ? 'border-start border-danger border-3' : '';
+                                var item = '<a href="' + (n.link || '/Notifications') + '" class="list-group-item list-group-item-action ' + (!n.isRead ? 'bg-light' : '') + ' ' + urgencyClass + '">';
+                                item += '<div class="d-flex justify-content-between align-items-start">';
+                                item += '<div class="flex-grow-1">';
+                                item += '<div class="d-flex justify-content-between"><strong class="small">' + (n.title || 'Notification') + '</strong><small class="text-muted">' + n.timeAgo + '</small></div>';
+                                item += '<p class="mb-0 small text-muted" style="line-height: 1.4;">' + n.message + '</p>';
+                                item += '</div></div></a>';
+                                notificationList.append(item);
+                            }
+                        } else {
+                            notificationList.html('<div class="text-center py-4 text-muted"><i class="bi bi-bell-slash fs-1"></i><p class="mb-0 mt-2">No notifications</p></div>');
+                        }
+                    },
+                    error: function() {
+                        notificationList.html('<div class="text-center py-3 text-danger">Failed to load</div>');
+                    }
+                });
+            }
+
+            setInterval(loadNotificationCount, 60000);
+
+            $('#notificationDropdown').on('show.bs.dropdown', function() {
+                loadNotificationList();
+            });
+        </script>
+    }
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>

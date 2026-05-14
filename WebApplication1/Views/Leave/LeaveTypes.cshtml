@@ -1,0 +1,232 @@
+﻿@model List<WebApplication1.Models.Leave>
+@{
+    ViewData["Title"] = "Manage Leave Types";
+    bool isSystemAdmin = ViewBag.IsSystemAdmin == true;
+    var stats = ViewBag.Stats as Dictionary<int, WebApplication1.Controllers.LeaveTypeStats>;
+}
+
+<div class="container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-gear text-primary"></i> Manage Leave Types</h2>
+            <p class="text-muted mb-0">Configure leave types, policies, and eligibility rules</p>
+        </div>
+        <div>
+            <a asp-action="CreateLeaveType" class="btn btn-success me-2">
+                <i class="bi bi-plus-circle"></i> Create Leave Type
+            </a>
+            <a asp-action="ManageEntitlements" class="btn btn-primary me-2">
+                <i class="bi bi-sliders"></i> Manage Entitlements
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card border-primary shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-tags display-4 text-primary"></i>
+                    <h2 class="mt-2 mb-0">@(Model?.Count ?? 0)</h2>
+                    <p class="text-muted mb-0">Leave Types</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-success shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-people display-4 text-success"></i>
+                    <h2 class="mt-2 mb-0">@(stats?.Values.Sum(s => s.TotalEntitlements) ?? 0)</h2>
+                    <p class="text-muted mb-0">Total Entitlements</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-info shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-file-earmark-text display-4 text-info"></i>
+                    <h2 class="mt-2 mb-0">@(stats?.Values.Sum(s => s.TotalRequests) ?? 0)</h2>
+                    <p class="text-muted mb-0">Total Requests</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-warning shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-calendar-check display-4 text-warning"></i>
+                    <h2 class="mt-2 mb-0">@(stats?.Values.Sum(s => s.TotalDaysUsed) ?? 0)</h2>
+                    <p class="text-muted mb-0">Days Used (Total)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leave Types Table -->
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-list-ul"></i> Leave Types Configuration</h5>
+            <span class="badge bg-light text-dark">@(Model?.Count ?? 0) types</span>
+        </div>
+        <div class="card-body p-0">
+            @if (Model == null || !Model.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                    <h5 class="mt-3 text-muted">No Leave Types Configured</h5>
+                    <p class="text-muted">Create your first leave type to get started.</p>
+                    <a asp-action="CreateLeaveType" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i> Create Leave Type
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Leave Type</th>
+                                <th>Description</th>
+                                <th class="text-center">Entitlements</th>
+                                <th class="text-center">Requests</th>
+                                <th class="text-center">Pending</th>
+                                <th class="text-center">Days Used</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var leave in Model)
+                            {
+                                var stat = stats != null && stats.ContainsKey(leave.LeaveId) ? stats[leave.LeaveId] : null;
+                                var isSpecial = leave.LeaveType.Contains("Maternity") ||
+                                leave.LeaveType.Contains("Paternity") ||
+                                leave.LeaveType.Contains("Bereavement") ||
+                                leave.LeaveType.Contains("Medical");
+
+                                <tr>
+                                    <td><strong>#@leave.LeaveId</strong></td>
+                                    <td>
+                                        <span class="badge bg-info fs-6">@leave.LeaveType</span>
+                                        @if (isSpecial)
+                                        {
+                                            <span class="badge bg-warning text-dark ms-1">Special</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(leave.LeaveDescription))
+                                        {
+                                            var desc = leave.LeaveDescription.Length > 50
+                                            ? leave.LeaveDescription.Substring(0, 50) + "..."
+                                            : leave.LeaveDescription;
+                                            <small class="text-muted">@desc</small>
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted fst-italic">No description</small>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success">@(stat?.TotalEntitlements ?? 0)</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary">@(stat?.TotalRequests ?? 0)</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if ((stat?.PendingRequests ?? 0) > 0)
+                                        {
+                                            <span class="badge bg-warning text-dark">@stat.PendingRequests</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">0</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <strong>@(stat?.TotalDaysUsed ?? 0)</strong>
+                                    </td>
+                                    <td>
+                                        <a asp-action="EditLeaveType" asp-route-id="@leave.LeaveId"
+                                           class="btn btn-sm btn-outline-primary me-1" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        @if ((stat?.TotalRequests ?? 0) == 0)
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                    data-bs-toggle="modal" data-bs-target="#deleteModal_@leave.LeaveId" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+
+                                            <!-- Delete Modal -->
+                                            <div class="modal fade" id="deleteModal_@leave.LeaveId" tabindex="-1">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header bg-danger text-white">
+                                                            <h5 class="modal-title">
+                                                                <i class="bi bi-exclamation-triangle"></i> Delete Leave Type
+                                                            </h5>
+                                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <p>Are you sure you want to delete <strong>@leave.LeaveType</strong>?</p>
+                                                            <p class="text-muted small">This will also remove all entitlements associated with this leave type.</p>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                            <form method="post" asp-action="DeleteLeaveType" asp-route-id="@leave.LeaveId" class="d-inline">
+                                                                @Html.AntiForgeryToken()
+                                                                <button type="submit" class="btn btn-danger">
+                                                                    <i class="bi bi-trash"></i> Delete
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Cannot delete - has requests">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Quick Actions Card -->
+    <div class="card mt-4">
+        <div class="card-header bg-light">
+            <h6 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-2">
+                    <a asp-action="ManageEntitlements" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-sliders me-2"></i> Manage Entitlements
+                    </a>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <a asp-action="SpecialLeaveReport" class="btn btn-outline-warning w-100">
+                        <i class="bi bi-star me-2"></i> Special Leave Report
+                    </a>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <a asp-action="TeamPendingRequests" class="btn btn-outline-info w-100">
+                        <i class="bi bi-hourglass-split me-2"></i> Pending Approvals
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,212 @@
+﻿@using System.Linq
+@model List<WebApplication1.Models.ShiftAssignment>
+
+@{
+    ViewData["Title"] = "My Shifts";
+}
+
+<div class="container">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-calendar-check"></i> My Shift Schedule</h2>
+            <p class="text-muted mb-0">View your assigned shift schedules</p>
+        </div>
+        <div>
+            <a asp-action="Index" class="btn btn-primary me-2">
+                <i class="bi bi-clock"></i> All Shifts
+            </a>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card border-primary shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-calendar-check display-4 text-primary"></i>
+                    <h2 class="mt-2 mb-0">@Model.Count</h2>
+                    <p class="text-muted mb-0">Total Assignments</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card border-success shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle display-4 text-success"></i>
+                    <h2 class="mt-2 mb-0">@Model.Count(a => a.Status == "Active")</h2>
+                    <p class="text-muted mb-0">Active Shifts</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card border-info shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-infinity display-4 text-info"></i>
+                    <h2 class="mt-2 mb-0">@Model.Count(a => !a.EndDate.HasValue)</h2>
+                    <p class="text-muted mb-0">Ongoing Shifts</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="card shadow">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-calendar-x display-1 text-muted"></i>
+                <h4 class="mt-3 text-muted">No Shifts Assigned</h4>
+                <p class="text-muted">You don't have any shift assignments yet.</p>
+                <p class="text-muted">Please contact your manager or HR if you believe this is an error.</p>
+                <a asp-controller="Home" asp-action="Index" class="btn btn-primary mt-3">
+                    <i class="bi bi-house"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        var activeShifts = Model.Where(a => a.Status == "Active").ToList();
+        var inactiveShifts = Model.Where(a => a.Status != "Active").ToList();
+
+        if (activeShifts.Any())
+        {
+            <div class="card shadow mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-check-circle"></i> Active Shift Assignments
+                        <span class="badge bg-light text-success ms-2">@activeShifts.Count</span>
+                    </h5>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="row p-3">
+                        @foreach (var assignment in activeShifts)
+                        {
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card h-100 border-success">
+                                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-clock text-success me-1"></i>
+                                            @(assignment.Shift?.Name ?? "Unknown Shift")
+                                        </h6>
+
+                                        <span class="badge bg-secondary">
+                                            @(assignment.Shift?.Type ?? "Custom")
+                                        </span>
+                                    </div>
+
+                                    <div class="card-body">
+                                        <div class="row text-center mb-3">
+                                            <div class="col-6">
+                                                <div class="border rounded p-2 bg-light">
+                                                    <p class="mb-0 small text-muted">Start</p>
+                                                    <strong>@(assignment.Shift?.StartTime?.ToString("hh:mm tt") ?? "N/A")</strong>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="border rounded p-2 bg-light">
+                                                    <p class="mb-0 small text-muted">End</p>
+                                                    <strong>@(assignment.Shift?.EndTime?.ToString("hh:mm tt") ?? "N/A")</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <hr />
+
+                                        <p class="mb-1">
+                                            <strong>From:</strong>
+                                            @(assignment.StartDate?.ToString("MMM dd, yyyy") ?? "N/A")
+                                        </p>
+
+                                        <p class="mb-0">
+                                            <strong>To:</strong>
+                                            @(assignment.EndDate?.ToString("MMM dd, yyyy") ?? "Ongoing")
+                                        </p>
+                                    </div>
+
+                                    <div class="card-footer bg-success text-white text-center">
+                                        Active
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (inactiveShifts.Any())
+        {
+            <div class="card shadow mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-x-circle"></i> Inactive Shift Assignments
+                        <span class="badge bg-light text-danger ms-2">@inactiveShifts.Count</span>
+                    </h5>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="row p-3">
+                        @foreach (var assignment in inactiveShifts)
+                        {
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card h-100 border-danger">
+                                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-clock text-danger me-1"></i>
+                                            @(assignment.Shift?.Name ?? "Unknown Shift")
+                                        </h6>
+
+                                        <span class="badge bg-secondary">
+                                            @(assignment.Shift?.Type ?? "Custom")
+                                        </span>
+                                    </div>
+
+                                    <div class="card-body">
+                                        <div class="row text-center mb-3">
+                                            <div class="col-6">
+                                                <div class="border rounded p-2 bg-light">
+                                                    <p class="mb-0 small text-muted">Start</p>
+                                                    <strong>@(assignment.Shift?.StartTime?.ToString("hh:mm tt") ?? "N/A")</strong>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="border rounded p-2 bg-light">
+                                                    <p class="mb-0 small text-muted">End</p>
+                                                    <strong>@(assignment.Shift?.EndTime?.ToString("hh:mm tt") ?? "N/A")</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <hr />
+
+                                        <p class="mb-1">
+                                            <strong>From:</strong>
+                                            @(assignment.StartDate?.ToString("MMM dd, yyyy") ?? "N/A")
+                                        </p>
+
+                                        <p class="mb-0">
+                                            <strong>To:</strong>
+                                            @(assignment.EndDate?.ToString("MMM dd, yyyy") ?? "Ongoing")
+                                        </p>
+                                    </div>
+
+                                    <div class="card-footer bg-danger text-white text-center">
+                                        Inactive
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>

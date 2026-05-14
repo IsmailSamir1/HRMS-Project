@@ -1,0 +1,190 @@
+﻿@model WebApplication1.Models.ShiftSchedule
+@{
+    ViewData["Title"] = "Edit Shift";
+
+    // Convert TimeOnly to string for input fields
+    string startTimeValue = Model.StartTime.HasValue ? Model.StartTime.Value.ToString("HH:mm") : "";
+    string endTimeValue = Model.EndTime.HasValue ? Model.EndTime.Value.ToString("HH:mm") : "";
+    string shiftDateValue = Model.ShiftDate.HasValue ? Model.ShiftDate.Value.ToString("yyyy-MM-dd") : "";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="bi bi-pencil"></i> Edit Shift #@Model.ShiftId
+                    </h4>
+                    <small>System Admin - Update shift details</small>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> @ViewBag.Error
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <form method="post" asp-action="Edit">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ShiftId" value="@Model.ShiftId" />
+
+                        <!-- Shift Name -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-tag"></i> Shift Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="Name" class="form-control" value="@Model.Name" placeholder="e.g., Morning Shift, Night Shift" required />
+                            <small class="text-muted">Enter a descriptive name for this shift</small>
+                        </div>
+
+                        <!-- Shift Type -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-diagram-3"></i> Shift Type <span class="text-danger">*</span>
+                            </label>
+                            <select name="Type" class="form-select" required>
+                                <option value="">-- Select Type --</option>
+                                <option value="Normal" selected="@(Model.Type == "Normal")">Normal - Standard working hours</option>
+                                <option value="Split" selected="@(Model.Type == "Split")">Split - Divided working hours with break</option>
+                                <option value="Rotational" selected="@(Model.Type == "Rotational")">Rotational - Rotating schedule</option>
+                                <option value="Custom" selected="@(Model.Type == "Custom")">Custom - Special/custom schedule</option>
+                            </select>
+                            <small class="text-muted">Select the type of shift schedule</small>
+                        </div>
+
+                        <!-- Time Settings -->
+                        <div class="card mb-3 border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="bi bi-clock"></i> Time Settings</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="bi bi-sunrise"></i> Start Time <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="time" name="StartTime" class="form-control" value="@startTimeValue" required />
+                                        <small class="text-muted">When does the shift start?</small>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="bi bi-sunset"></i> End Time <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="time" name="EndTime" class="form-control" value="@endTimeValue" required />
+                                        <small class="text-muted">When does the shift end?</small>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="bi bi-cup-hot"></i> Break Duration (minutes)
+                                        </label>
+                                        <input type="number" name="BreakDuration" class="form-control" value="@Model.BreakDuration" min="0" max="480" />
+                                        <small class="text-muted">Total break time in minutes (optional)</small>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="bi bi-calendar-date"></i> Specific Date (Optional)
+                                        </label>
+                                        <input type="date" name="ShiftDate" class="form-control" value="@shiftDateValue" />
+                                        <small class="text-muted">Leave empty for recurring shifts</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="card mb-3 border-success">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0"><i class="bi bi-toggle-on"></i> Status</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label">
+                                            <i class="bi bi-flag"></i> Shift Status <span class="text-danger">*</span>
+                                        </label>
+                                        <select name="Status" class="form-select" required>
+                                            <option value="Active" selected="@(Model.Status == "Active")">Active</option>
+                                            <option value="Inactive" selected="@(Model.Status == "Inactive")">Inactive</option>
+                                            <option value="Suspended" selected="@(Model.Status == "Suspended")">Suspended</option>
+                                        </select>
+                                        <small class="text-muted">Set shift availability status</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Current Status</label>
+                                        <div class="mt-2">
+                                            @if (Model.Status == "Active")
+                                            {
+                                                <span class="badge bg-success fs-6">
+                                                    <i class="bi bi-check-circle"></i> Active
+                                                </span>
+                                            }
+                                            else if (Model.Status == "Inactive")
+                                            {
+                                                <span class="badge bg-secondary fs-6">
+                                                    <i class="bi bi-x-circle"></i> Inactive
+                                                </span>
+                                            }
+                                            else if (Model.Status == "Suspended")
+                                            {
+                                                <span class="badge bg-warning text-dark fs-6">
+                                                    <i class="bi bi-pause-circle"></i> Suspended
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary fs-6">@Model.Status</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Current Assignments Info -->
+                        @if (Model.ShiftAssignments != null && Model.ShiftAssignments.Any())
+                        {
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <strong>Note:</strong> This shift is currently assigned to <strong>@Model.ShiftAssignments.Count</strong> employee(s).
+                                Changes will affect all assignments.
+                            </div>
+                        }
+
+                        <!-- Info Box -->
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Tips:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Setting status to "Inactive" will prevent new assignments</li>
+                                <li>Existing assignments will remain until manually removed</li>
+                                <li>For overnight shifts, set end time earlier than start time</li>
+                            </ul>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <div>
+                                <a asp-action="Details" asp-route-id="@Model.ShiftId" class="btn btn-info me-2">
+                                    <i class="bi bi-eye"></i> View Details
+                                </a>
+                                <button type="submit" class="btn btn-warning btn-lg">
+                                    <i class="bi bi-check-circle"></i> Update Shift
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+```
+

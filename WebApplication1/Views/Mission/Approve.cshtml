@@ -1,0 +1,142 @@
+﻿@model WebApplication1.Models.Mission
+@{
+    ViewData["Title"] = "Approve Mission";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-check-circle"></i> Approve Mission
+                    </h4>
+                    <small>Line Manager - Review and approve mission request</small>
+                </div>
+                <div class="card-body">
+                    <!-- Mission Details -->
+                    <div class="card mb-4 border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="bi bi-geo-alt"></i> Mission Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <strong><i class="bi bi-hash"></i> Mission ID:</strong>
+                                    <p class="mb-0 fs-5">@Model.MissionId</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <strong><i class="bi bi-geo-alt"></i> Destination:</strong>
+                                    <p class="mb-0 fs-5">@Model.Destination</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <strong><i class="bi bi-calendar-event"></i> Start Date:</strong>
+                                    <p class="mb-0">@Model.StartDate?.ToString("MMMM dd, yyyy")</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <strong><i class="bi bi-calendar-check"></i> End Date:</strong>
+                                    <p class="mb-0">
+                                        @if (Model.EndDate.HasValue)
+                                        {
+                                            @Model.EndDate?.ToString("MMMM dd, yyyy")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Not Set</span>
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <strong><i class="bi bi-flag"></i> Current Status:</strong>
+                                    <p class="mb-0">
+                                        <span class="badge bg-warning text-dark fs-6">@Model.Status</span>
+                                    </p>
+                                </div>
+                                @if (Model.StartDate.HasValue && Model.EndDate.HasValue)
+                                {
+                                    var duration = Model.EndDate.Value.DayNumber - Model.StartDate.Value.DayNumber;
+                                    <div class="col-md-6 mb-3">
+                                        <strong><i class="bi bi-clock"></i> Duration:</strong>
+                                        <p class="mb-0">@duration day(s)</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Employee Info -->
+                    <div class="card mb-4 border-info">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="bi bi-person"></i> Requesting Employee</h5>
+                        </div>
+                        <div class="card-body">
+                            @if (Model.Employee != null)
+                            {
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <strong><i class="bi bi-person"></i> Name:</strong>
+                                        <p class="mb-0 fs-5">@Model.Employee.FullName</p>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <strong><i class="bi bi-envelope"></i> Email:</strong>
+                                        <p class="mb-0">
+                                            <a href="mailto:@Model.Employee.Email">@Model.Employee.Email</a>
+                                        </p>
+                                    </div>
+                                </div>
+                                @if (!string.IsNullOrEmpty(Model.Employee.Phone))
+                                {
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <strong><i class="bi bi-telephone"></i> Phone:</strong>
+                                            <p class="mb-0">@Model.Employee.Phone</p>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <p class="text-muted mb-0">Employee information not available</p>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Confirmation Message -->
+                    <div class="alert alert-success">
+                        <i class="bi bi-question-circle"></i>
+                        <strong>Are you sure you want to APPROVE this mission?</strong>
+                        <p class="mb-0 mt-2">
+                            By approving, you confirm that <strong>@Model.Employee?.FullName</strong> is authorized to travel to <strong>@Model.Destination</strong> from <strong>@Model.StartDate?.ToString("MMM dd, yyyy")</strong>.
+                        </p>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <form method="post" asp-action="ApproveConfirm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="MissionId" value="@Model.MissionId" />
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <div>
+                                <a asp-action="Reject" asp-route-id="@Model.MissionId" class="btn btn-danger me-2">
+                                    <i class="bi bi-x-lg"></i> Reject Instead
+                                </a>
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="bi bi-check-lg"></i> Approve Mission
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+```
+

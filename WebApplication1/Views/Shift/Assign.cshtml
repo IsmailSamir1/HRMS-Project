@@ -1,0 +1,251 @@
+﻿@{
+    ViewData["Title"] = "Assign Shift to Employee";
+    var employees = ViewBag.Employees as List<WebApplication1.Models.Employee>;
+    var shifts = ViewBag.Shifts as List<WebApplication1.Models.ShiftSchedule>;
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-person-plus"></i> Assign Shift to Employee
+                    </h4>
+                    <small>Assign a shift schedule to an individual employee</small>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> @ViewBag.Error
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <form method="post" asp-action="Assign">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Employee Selection -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-person"></i> Employee <span class="text-danger">*</span>
+                            </label>
+                            <select name="EmployeeId" class="form-select" required>
+                                <option value="">-- Select Employee --</option>
+                                @if (employees != null)
+                                {
+                                    @foreach (var emp in employees)
+                                    {
+                                        <option value="@emp.EmployeeId">@emp.FullName (@emp.Email)</option>
+                                    }
+                                }
+                            </select>
+                            <small class="text-muted">Select the employee to assign the shift to</small>
+                        </div>
+
+                        <!-- Shift Selection -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-clock"></i> Shift <span class="text-danger">*</span>
+                            </label>
+                            <select name="ShiftId" class="form-select" required id="shiftSelect">
+                                <option value="">-- Select Shift --</option>
+                                @if (shifts != null)
+                                {
+                                    @foreach (var shift in shifts)
+                                    {
+                                        string shiftInfo = $"{shift.Name} ({shift.Type}) - ";
+                                        if (shift.StartTime.HasValue && shift.EndTime.HasValue)
+                                        {
+                                            shiftInfo += $"{shift.StartTime.Value.ToString("hh:mm tt")} to {shift.EndTime.Value.ToString("hh:mm tt")}";
+                                        }
+                                        <option value="@shift.ShiftId"
+                                                data-type="@shift.Type"
+                                                data-start="@(shift.StartTime.HasValue ? shift.StartTime.Value.ToString("hh:mm tt") : "")"
+                                                data-end="@(shift.EndTime.HasValue ? shift.EndTime.Value.ToString("hh:mm tt") : "")"
+                                                data-break="@shift.BreakDuration">
+                                            @shiftInfo
+                                        </option>
+                                    }
+                                }
+                            </select>
+                            <small class="text-muted">Select the shift to assign</small>
+                        </div>
+
+                        <!-- Shift Preview -->
+                        <div class="card mb-3 border-info" id="shiftPreview" style="display: none;">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0"><i class="bi bi-eye"></i> Shift Preview</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-md-3">
+                                        <i class="bi bi-diagram-3 display-6 text-primary"></i>
+                                        <p class="mb-0 mt-2"><strong>Type</strong></p>
+                                        <p class="mb-0" id="previewType">-</p>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <i class="bi bi-sunrise display-6 text-success"></i>
+                                        <p class="mb-0 mt-2"><strong>Start</strong></p>
+                                        <p class="mb-0" id="previewStart">-</p>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <i class="bi bi-sunset display-6 text-danger"></i>
+                                        <p class="mb-0 mt-2"><strong>End</strong></p>
+                                        <p class="mb-0" id="previewEnd">-</p>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <i class="bi bi-cup-hot display-6 text-warning"></i>
+                                        <p class="mb-0 mt-2"><strong>Break</strong></p>
+                                        <p class="mb-0" id="previewBreak">-</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Date Range -->
+                        <div class="card mb-3 border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="bi bi-calendar-range"></i> Assignment Period</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="bi bi-calendar-event"></i> Start Date <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="date" name="StartDate" class="form-control" required />
+                                        <small class="text-muted">When does this assignment start?</small>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="bi bi-calendar-check"></i> End Date
+                                        </label>
+                                        <input type="date" name="EndDate" class="form-control" />
+                                        <small class="text-muted">Leave empty for ongoing assignment</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Info Box -->
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Note:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>The assignment will be created with <strong>"Active"</strong> status</li>
+                                <li>The employee will receive a notification about their new shift</li>
+                                <li>Leave end date empty for permanent/ongoing shift assignments</li>
+                                <li>You can edit or remove assignments later from the Assignments page</li>
+                            </ul>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <div>
+                                <a asp-action="AssignDepartment" class="btn btn-primary me-2">
+                                    <i class="bi bi-building"></i> Assign to Department Instead
+                                </a>
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="bi bi-check-circle"></i> Assign Shift
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="card shadow mt-4">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <a asp-action="Index" class="btn btn-outline-primary w-100">
+                                <i class="bi bi-clock"></i> View All Shifts
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a asp-action="Assignments" class="btn btn-outline-success w-100">
+                                <i class="bi bi-person-check"></i> View Assignments
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a asp-action="Create" class="btn btn-outline-warning w-100">
+                                <i class="bi bi-plus-circle"></i> Create New Shift
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const shiftSelect = document.getElementById('shiftSelect');
+            const shiftPreview = document.getElementById('shiftPreview');
+            const previewType = document.getElementById('previewType');
+            const previewStart = document.getElementById('previewStart');
+            const previewEnd = document.getElementById('previewEnd');
+            const previewBreak = document.getElementById('previewBreak');
+
+            shiftSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+
+                if (this.value) {
+                    const type = selectedOption.getAttribute('data-type');
+                    const start = selectedOption.getAttribute('data-start');
+                    const end = selectedOption.getAttribute('data-end');
+                    const breakDuration = selectedOption.getAttribute('data-break');
+
+                    previewType.textContent = type || '-';
+                    previewStart.textContent = start || '-';
+                    previewEnd.textContent = end || '-';
+                    previewBreak.textContent = breakDuration ? breakDuration + ' min' : 'None';
+
+                    // Add badge styling for type
+                    if (type === 'Normal') {
+                        previewType.innerHTML = '<span class="badge bg-primary">Normal</span>';
+                    } else if (type === 'Split') {
+                        previewType.innerHTML = '<span class="badge bg-info">Split</span>';
+                    } else if (type === 'Rotational') {
+                        previewType.innerHTML = '<span class="badge bg-warning text-dark">Rotational</span>';
+                    } else if (type === 'Custom') {
+                        previewType.innerHTML = '<span class="badge bg-secondary">Custom</span>';
+                    }
+
+                    shiftPreview.style.display = 'block';
+                } else {
+                    shiftPreview.style.display = 'none';
+                }
+            });
+
+            // Set minimum date to today
+            const startDateInput = document.querySelector('input[name="StartDate"]');
+            const endDateInput = document.querySelector('input[name="EndDate"]');
+            const today = new Date().toISOString().split('T')[0];
+
+            if (startDateInput) {
+                startDateInput.setAttribute('min', today);
+                startDateInput.value = today;
+            }
+
+            // Ensure end date is after start date
+            if (startDateInput && endDateInput) {
+                startDateInput.addEventListener('change', function() {
+                    endDateInput.setAttribute('min', this.value);
+                    if (endDateInput.value && endDateInput.value < this.value) {
+                        endDateInput.value = this.value;
+                    }
+                });
+            }
+        });
+    </script>
+}
+```

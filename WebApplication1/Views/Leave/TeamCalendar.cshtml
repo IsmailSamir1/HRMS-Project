@@ -1,0 +1,201 @@
+﻿@model List<WebApplication1.Models.LeaveRequest>
+@{
+    ViewData["Title"] = "Team Leave Calendar";
+    bool isSystemAdmin = ViewBag.IsSystemAdmin == true;
+    bool isHRAdmin = ViewBag.IsHRAdmin == true;
+
+    var thisMonth = Model != null ? Model.Where(l => l.ApprovalTiming.HasValue &&
+                                         l.ApprovalTiming.Value.Month == DateTime.Now.Month &&
+                                         l.ApprovalTiming.Value.Year == DateTime.Now.Year).ToList() : new List<WebApplication1.Models.LeaveRequest>();
+    int totalDays = Model != null ? Model.Sum(l => l.Duration ?? 0) : 0;
+    int uniqueEmployees = Model != null ? Model.Select(l => l.EmployeeId).Distinct().Count() : 0;
+}
+
+<div class="container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-calendar3"></i> Team Leave Calendar</h2>
+            <p class="text-muted mb-0">
+                @if (isSystemAdmin || isHRAdmin)
+                {
+                    <span>View all approved leaves across the organization</span>
+                }
+                else
+                {
+                    <span>View your team's approved leaves</span>
+                }
+            </p>
+        </div>
+        <div>
+            <a asp-action="Index" class="btn btn-primary me-2">
+                <i class="bi bi-list-ul"></i> All Requests
+            </a>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    @if (Model != null && Model.Any())
+    {
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="card border-primary shadow h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-calendar-check display-4 text-primary"></i>
+                        <h2 class="mt-2 mb-0">@Model.Count</h2>
+                        <p class="text-muted mb-0">Approved Leaves</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card border-success shadow h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-people display-4 text-success"></i>
+                        <h2 class="mt-2 mb-0">@uniqueEmployees</h2>
+                        <p class="text-muted mb-0">Employees on Leave</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card border-info shadow h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-clock-history display-4 text-info"></i>
+                        <h2 class="mt-2 mb-0">@totalDays</h2>
+                        <p class="text-muted mb-0">Total Days</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card border-warning shadow h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-calendar-month display-4 text-warning"></i>
+                        <h2 class="mt-2 mb-0">@thisMonth.Count</h2>
+                        <p class="text-muted mb-0">This Month</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Calendar View -->
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-calendar-week"></i> Approved Leaves</h5>
+            @if (Model != null)
+            {
+                <span class="badge bg-light text-dark">@Model.Count records</span>
+            }
+        </div>
+        <div class="card-body p-0">
+            @if (Model == null || !Model.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-calendar-x display-1 text-muted"></i>
+                    <h5 class="mt-3 text-muted">No Approved Leaves</h5>
+                    <p class="text-muted">There are no approved leave requests to display.</p>
+                </div>
+            }
+            else
+            {
+                var groupedByMonth = Model
+                .Where(l => l.ApprovalTiming.HasValue)
+                .GroupBy(l => new { l.ApprovalTiming!.Value.Year, l.ApprovalTiming.Value.Month })
+                .OrderByDescending(g => g.Key.Year)
+                .ThenByDescending(g => g.Key.Month)
+                .ToList();
+
+                <div class="accordion" id="calendarAccordion">
+                    @foreach (var monthGroup in groupedByMonth)
+                    {
+                        var monthName = new DateTime(monthGroup.Key.Year, monthGroup.Key.Month, 1).ToString("MMMM yyyy");
+                        var monthId = "month_" + monthGroup.Key.Year + "_" + monthGroup.Key.Month;
+                        var isCurrentMonth = monthGroup.Key.Year == DateTime.Now.Year && monthGroup.Key.Month == DateTime.Now.Month;
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button @(isCurrentMonth ? "" : "collapsed")" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#@monthId">
+                                    <i class="bi bi-calendar-month me-2"></i>
+                                    <strong>@monthName</strong>
+                                    <span class="badge bg-primary ms-2">@monthGroup.Count() leaves</span>
+                                    @if (isCurrentMonth)
+                                    {
+                                        <span class="badge bg-success ms-2">Current Month</span>
+                                    }
+                                </button>
+                            </h2>
+                            <div id="@monthId" class="accordion-collapse collapse @(isCurrentMonth ? "show" : "")">
+                                <div class="accordion-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Employee</th>
+                                                    <th>Leave Type</th>
+                                                    <th>Duration</th>
+                                                    <th>Approved Date</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var leave in monthGroup.OrderByDescending(l => l.ApprovalTiming))
+                                                {
+                                                    <tr>
+                                                        <td>
+                                                            <div class="d-flex align-items-center">
+                                                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px;">
+                                                                    @{
+                                                                        var initial = leave.Employee?.FirstName != null && leave.Employee.FirstName.Length > 0
+                                                                        ? leave.Employee.FirstName.Substring(0, 1)
+                                                                        : "?";
+                                                                    }
+                                                                    <span class="text-white small fw-bold">@initial</span>
+                                                                </div>
+                                                                <div>
+                                                                    <strong>@(leave.Employee?.FullName ?? "Unknown")</strong>
+                                                                    @if (leave.Employee?.Department != null)
+                                                                    {
+                                                                        <br />
+                                                                        <small class="text-muted">@leave.Employee.Department.DepartmentName</small>
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge bg-info">
+                                                                @(leave.Leave?.LeaveType ?? "Unknown")
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <strong>@leave.Duration</strong> day(s)
+                                                        </td>
+                                                        <td>
+                                                            @if (leave.ApprovalTiming.HasValue)
+                                                            {
+                                                                <i class="bi bi-calendar-check text-success me-1"></i>
+                                                                @leave.ApprovalTiming.Value.ToString("MMM dd, yyyy")
+                                                            }
+                                                        </td>
+                                                        <td>
+                                                            <a asp-action="Details" asp-route-id="@leave.RequestId"
+                                                               class="btn btn-sm btn-outline-info">
+                                                                <i class="bi bi-eye"></i> View
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

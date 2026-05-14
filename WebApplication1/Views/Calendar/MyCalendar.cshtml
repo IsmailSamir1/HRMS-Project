@@ -1,0 +1,141 @@
+﻿@{
+    ViewData["Title"] = "My Calendar";
+    var employee = ViewBag.Employee as WebApplication1.Models.Employee;
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-calendar-check text-primary me-2"></i>My Calendar
+            </h2>
+            <p class="text-muted mb-0">View your personal schedule, leaves, and shifts</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Index" class="btn btn-outline-primary">
+                <i class="bi bi-people me-1"></i> Team Calendar
+            </a>
+            <a asp-controller="Leave" asp-action="Create" class="btn btn-success">
+                <i class="bi bi-plus me-1"></i> Request Leave
+            </a>
+        </div>
+    </div>
+
+    <!-- Employee Info Card -->
+    @if (employee != null)
+    {
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
+                        <i class="bi bi-person-circle text-primary fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0">@employee.FullName</h5>
+                        <small class="text-muted">@(employee.Department?.DepartmentName ?? "No Department")</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Legend -->
+    <div class="d-flex flex-wrap gap-3 mb-4">
+        <div class="d-flex align-items-center">
+            <span class="badge me-2" style="background: #e74c3c; width: 20px; height: 20px;"></span>
+            <small>Approved Leave</small>
+        </div>
+        <div class="d-flex align-items-center">
+            <span class="badge me-2" style="background: #f39c12; width: 20px; height: 20px;"></span>
+            <small>Pending Leave</small>
+        </div>
+        <div class="d-flex align-items-center">
+            <span class="badge me-2" style="background: #667eea; width: 20px; height: 20px;"></span>
+            <small>My Shifts</small>
+        </div>
+    </div>
+
+    <!-- Calendar -->
+    <div class="card shadow">
+        <div class="card-body p-0">
+            <div id="myCalendar" style="min-height: 600px;"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+
+    <style>
+        .fc {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .fc-toolbar-title {
+            font-size: 1.5rem !important;
+            font-weight: 600 !important;
+        }
+
+        .fc-button {
+            background: var(--primary-gradient) !important;
+            border: none !important;
+        }
+
+        .fc-event {
+            border: none !important;
+            border-radius: 4px !important;
+            padding: 2px 6px !important;
+            cursor: pointer;
+        }
+
+        .fc-day-today {
+            background: rgba(102, 126, 234, 0.1) !important;
+        }
+
+        body.dark-mode .fc {
+            color: #e4e4e4;
+        }
+
+        body.dark-mode .fc-theme-standard td, body.dark-mode .fc-theme-standard th {
+            border-color: #374151;
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('myCalendar');
+
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,listWeek'
+                },
+                height: 'auto',
+                navLinks: true,
+                dayMaxEvents: 3,
+
+                events: function(info, successCallback, failureCallback) {
+                    fetch('/Calendar/GetMyEvents?start=' + info.startStr + '&end=' + info.endStr)
+                        .then(response => response.json())
+                        .then(events => successCallback(events))
+                        .catch(error => failureCallback(error));
+                },
+
+                eventClick: function(info) {
+                    var props = info.event.extendedProps;
+                    if (props.type === 'leave') {
+                        window.location.href = '/Leave/Details/' + info.event.id.replace('leave_', '');
+                    } else if (props.type === 'shift') {
+                        window.location.href = '/Shift/MyShifts';
+                    }
+                }
+            });
+
+            calendar.render();
+        });
+    </script>
+}

@@ -1,0 +1,247 @@
+﻿@{
+    ViewData["Title"] = "Employee Performance";
+    var employee = ViewBag.Employee as WebApplication1.Models.Employee;
+    var perfData = ViewBag.PerformanceData as WebApplication1.Controllers.PerformanceData;
+    var skills = ViewBag.Skills as List<WebApplication1.Models.EmployeeSkill>;
+    var missions = ViewBag.Missions as List<WebApplication1.Models.Mission>;
+    var notes = ViewBag.Notes as List<WebApplication1.Models.ManagerNote>;
+    var leaves = ViewBag.Leaves as List<WebApplication1.Models.LeaveRequest>;
+    bool canAddNote = ViewBag.CanAddNote == true;
+    bool isSystemAdmin = ViewBag.IsSystemAdmin == true;
+    bool isHRAdmin = ViewBag.IsHRAdmin == true;
+    int currentUserId = Context.Session.GetInt32("EmployeeId") ?? 0;
+}
+
+<div class="container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1"><i class="bi bi-person-badge text-primary me-2"></i>@employee?.FullName</h2>
+            <p class="text-muted mb-0">
+                @employee?.Department?.DepartmentName
+                @if (employee?.Position != null)
+                {
+                    <span class="mx-2">·</span>
+                    @employee.Position.PositionTitle
+                }
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="TeamPerformance" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Team
+            </a>
+            @if (canAddNote)
+            {
+                <a asp-action="AddNote" asp-route-employeeId="@employee?.EmployeeId" class="btn btn-primary">
+                    <i class="bi bi-chat-plus me-1"></i> Add Note
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Overall Score & Breakdown -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                         style="width: 120px; height: 120px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <div class="text-white">
+                            <h2 class="mb-0 fw-bold">@perfData?.OverallScore</h2>
+                            <small>/ 100</small>
+                        </div>
+                    </div>
+                    <h5>Overall Score</h5>
+                    <span class="badge bg-@perfData?.BadgeColor fs-6 px-3 py-2">@perfData?.PerformanceLevel</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-0">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Performance Breakdown</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Attendance -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span><i class="bi bi-calendar-check text-success me-2"></i>Attendance (30%)</span>
+                            <span class="fw-bold">@perfData?.AttendanceScore.ToString("F1")%</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-success" style="width: @perfData?.AttendanceScore%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Leave -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span><i class="bi bi-calendar-heart text-info me-2"></i>Leave Management (20%)</span>
+                            <span class="fw-bold">@perfData?.LeaveScore.ToString("F1")%</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-info" style="width: @perfData?.LeaveScore%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Missions -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span><i class="bi bi-flag text-warning me-2"></i>Mission Completion (25%)</span>
+                            <span class="fw-bold">@perfData?.MissionScore.ToString("F1")%</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-warning" style="width: @perfData?.MissionScore%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Skills -->
+                    <div class="mb-0">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span><i class="bi bi-tools text-primary me-2"></i>Skills & Expertise (25%)</span>
+                            <span class="fw-bold">@perfData?.SkillsScore.ToString("F1")%</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-primary" style="width: @perfData?.SkillsScore%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-2 col-4 mb-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body py-3">
+                    <h4 class="mb-0 text-success">@perfData?.PresentDays</h4>
+                    <small class="text-muted">Present Days</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-4 mb-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body py-3">
+                    <h4 class="mb-0 text-warning">@perfData?.LateArrivals</h4>
+                    <small class="text-muted">Late Arrivals</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-4 mb-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body py-3">
+                    <h4 class="mb-0 text-info">@perfData?.TotalLeaveDays</h4>
+                    <small class="text-muted">Leave Days</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-4 mb-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body py-3">
+                    <h4 class="mb-0 text-primary">@perfData?.CompletedMissions</h4>
+                    <small class="text-muted">Missions Done</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-4 mb-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body py-3">
+                    <h4 class="mb-0 text-success">@perfData?.TotalSkills</h4>
+                    <small class="text-muted">Skills</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-4 mb-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body py-3">
+                    <h4 class="mb-0 text-warning">@perfData?.ExpertSkills</h4>
+                    <small class="text-muted">Expert Skills</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Skills -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-0">
+                    <h5 class="mb-0"><i class="bi bi-tools me-2"></i>Skills</h5>
+                </div>
+                <div class="card-body">
+                    @if (skills != null && skills.Any())
+                    {
+                        @foreach (var skill in skills)
+                        {
+                            var badgeColor = skill.ProficiencyLevel switch
+                            {
+                                "Expert" => "success",
+                                "Advanced" => "primary",
+                                "Intermediate" => "info",
+                                _ => "secondary"
+                            };
+                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                <span>@skill.Skill?.SkillName</span>
+                                <span class="badge bg-@badgeColor">@skill.ProficiencyLevel</span>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center py-3">No skills recorded</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Manager Notes -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-chat-square-text me-2"></i>Manager Notes</h5>
+                    @if (canAddNote)
+                    {
+                        <a asp-action="AddNote" asp-route-employeeId="@employee?.EmployeeId" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus"></i> Add
+                        </a>
+                    }
+                </div>
+                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                    @if (notes != null && notes.Any())
+                    {
+                        @foreach (var note in notes)
+                        {
+                            <div class="border-start border-3 border-primary ps-3 mb-3">
+                                <p class="mb-1">@note.NoteContent</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="bi bi-person me-1"></i>@note.Manager?.FullName
+                                        <span class="mx-2">·</span>
+                                        @note.CreatedAt?.ToString("MMM dd, yyyy")
+                                    </small>
+                                    @if (isSystemAdmin || isHRAdmin || note.ManagerId == currentUserId)
+                                    {
+                                        <form asp-action="DeleteNote" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="noteId" value="@note.NoteId" />
+                                            <input type="hidden" name="employeeId" value="@employee?.EmployeeId" />
+                                            <button type="submit" class="btn btn-sm btn-link text-danger p-0" onclick="return confirm('Delete this note?');">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center py-3">No notes recorded</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

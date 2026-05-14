@@ -1,0 +1,345 @@
+﻿@{
+    ViewData["Title"] = "Diversity Report";
+    var diversityByCountry = ViewBag.DiversityByCountry as IEnumerable<dynamic>;
+    var diversityByDepartment = ViewBag.DiversityByDepartment as IEnumerable<dynamic>;
+    var departments = ViewBag.Departments as List<WebApplication1.Models.Department>;
+    int totalEmployees = ViewBag.TotalEmployees ?? 0;
+}
+
+<div class="container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-globe"></i> Diversity Report</h2>
+            <p class="text-muted mb-0">Workforce diversity statistics by country and department</p>
+        </div>
+        <div>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Analytics
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Card -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card bg-primary text-white shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-people display-4"></i>
+                    <h2 class="mt-2 mb-0">@totalEmployees</h2>
+                    <p class="mb-0">Total Workforce</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card bg-info text-white shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-globe-americas display-4"></i>
+                    <h2 class="mt-2 mb-0">
+                        @if (diversityByCountry != null)
+                        {
+                            @diversityByCountry.Count()
+                        }
+                        else
+                        {
+                            @:0
+                        }
+                    </h2>
+                    <p class="mb-0">Countries Represented</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card bg-success text-white shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-building display-4"></i>
+                    <h2 class="mt-2 mb-0">
+                        @if (diversityByDepartment != null)
+                        {
+                            @diversityByDepartment.Count()
+                        }
+                        else
+                        {
+                            @:0
+                        }
+                    </h2>
+                    <p class="mb-0">Departments</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Diversity by Country -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-globe"></i> Diversity by Country of Birth</h5>
+                </div>
+                <div class="card-body">
+                    @if (diversityByCountry != null && diversityByCountry.Count() > 0)
+                    {
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Country</th>
+                                    <th>Employees</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in diversityByCountry)
+                                {
+                                    string country = item.Country ?? "Unknown";
+                                    int count = (int)item.Count;
+                                    double percentage = totalEmployees > 0
+                                    ? Math.Round((double)count / totalEmployees * 100, 1)
+                                    : 0;
+
+                                    <tr>
+                                        <td>
+                                            <i class="bi bi-geo-alt me-1"></i>
+                                            @country
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">@count</span>
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar bg-info" role="progressbar"
+                                                     style="width: @percentage%">
+                                                    @percentage%
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                        <!-- Visual Bar Chart -->
+                        <h6 class="mt-4 mb-3"><i class="bi bi-bar-chart"></i> Visual Distribution</h6>
+                        @foreach (var item in diversityByCountry)
+                        {
+                            string country = item.Country ?? "Unknown";
+                            int count = (int)item.Count;
+                            double percentage = totalEmployees > 0
+                            ? Math.Round((double)count / totalEmployees * 100, 1)
+                            : 0;
+
+                            string barColor = percentage >= 50 ? "bg-success" :
+                            percentage >= 25 ? "bg-info" :
+                            percentage >= 10 ? "bg-warning" : "bg-secondary";
+
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <small><i class="bi bi-flag me-1"></i>@country</small>
+                                    <small>@count employees (@percentage%)</small>
+                                </div>
+                                <div class="progress" style="height: 15px;">
+                                    <div class="progress-bar @barColor" role="progressbar"
+                                         style="width: @percentage%"></div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-globe display-1 text-muted"></i>
+                            <h5 class="mt-3 text-muted">No country data available</h5>
+                            <p class="text-muted">Employee country of birth information not recorded.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Diversity by Department -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-building"></i> Distribution by Department</h5>
+                </div>
+                <div class="card-body">
+                    @if (diversityByDepartment != null && diversityByDepartment.Count() > 0)
+                    {
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Department</th>
+                                    <th>Employees</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in diversityByDepartment)
+                                {
+                                    int? deptId = (int?)item.DepartmentId;
+                                    int count = (int)item.Count;
+                                    string deptName = "Unknown";
+
+                                    if (deptId.HasValue && departments != null)
+                                    {
+                                        var dept = departments.FirstOrDefault(d => d.DepartmentId == deptId.Value);
+                                        if (dept != null)
+                                        {
+                                            deptName = dept.DepartmentName;
+                                        }
+                                    }
+
+                                    double percentage = totalEmployees > 0
+                                    ? Math.Round((double)count / totalEmployees * 100, 1)
+                                    : 0;
+
+                                    <tr>
+                                        <td>
+                                            <i class="bi bi-building me-1"></i>
+                                            @deptName
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">@count</span>
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar bg-success" role="progressbar"
+                                                     style="width: @percentage%">
+                                                    @percentage%
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                        <!-- Visual Bar Chart -->
+                        <h6 class="mt-4 mb-3"><i class="bi bi-bar-chart"></i> Visual Distribution</h6>
+                        @foreach (var item in diversityByDepartment)
+                        {
+                            int? deptId = (int?)item.DepartmentId;
+                            int count = (int)item.Count;
+                            string deptName = "Unknown";
+
+                            if (deptId.HasValue && departments != null)
+                            {
+                                var dept = departments.FirstOrDefault(d => d.DepartmentId == deptId.Value);
+                                if (dept != null)
+                                {
+                                    deptName = dept.DepartmentName;
+                                }
+                            }
+
+                            double percentage = totalEmployees > 0
+                            ? Math.Round((double)count / totalEmployees * 100, 1)
+                            : 0;
+
+                            string barColor = percentage >= 40 ? "bg-success" :
+                            percentage >= 20 ? "bg-info" :
+                            percentage >= 10 ? "bg-warning" : "bg-secondary";
+
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <small><i class="bi bi-diagram-3 me-1"></i>@deptName</small>
+                                    <small>@count employees (@percentage%)</small>
+                                </div>
+                                <div class="progress" style="height: 15px;">
+                                    <div class="progress-bar @barColor" role="progressbar"
+                                         style="width: @percentage%"></div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-building display-1 text-muted"></i>
+                            <h5 class="mt-3 text-muted">No department data available</h5>
+                            <p class="text-muted">Employee department information not recorded.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Diversity Insights -->
+    <div class="card shadow mt-2 mb-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0"><i class="bi bi-lightbulb"></i> Diversity Insights</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="bi bi-graph-up text-success"></i> Key Metrics</h6>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Total Employees
+                            <span class="badge bg-primary rounded-pill">@totalEmployees</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Countries Represented
+                            <span class="badge bg-info rounded-pill">
+                                @if (diversityByCountry != null)
+                                {
+                                    @diversityByCountry.Count()
+                                }
+                                else
+                                {
+                                    @:0
+                                }
+                            </span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Active Departments
+                            <span class="badge bg-success rounded-pill">
+                                @if (diversityByDepartment != null)
+                                {
+                                    @diversityByDepartment.Count()
+                                }
+                                else
+                                {
+                                    @:0
+                                }
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="bi bi-info-circle text-info"></i> About This Report</h6>
+                    <p class="text-muted">
+                        This diversity report provides an overview of workforce composition across
+                        different countries of origin and departments. Use this data to:
+                    </p>
+                    <ul class="text-muted">
+                        <li>Track diversity and inclusion initiatives</li>
+                        <li>Identify areas for improvement</li>
+                        <li>Monitor department composition</li>
+                        <li>Support compliance reporting</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="d-flex justify-content-between">
+        <div>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Analytics Dashboard
+            </a>
+        </div>
+        <div>
+            <a asp-action="DepartmentStats" class="btn btn-primary me-2">
+                <i class="bi bi-bar-chart"></i> Department Stats
+            </a>
+            <a asp-action="ComplianceReport" class="btn btn-success me-2">
+                <i class="bi bi-search"></i> Compliance Report
+            </a>
+            <button onclick="window.print()" class="btn btn-outline-primary">
+                <i class="bi bi-printer"></i> Print Report
+            </button>
+        </div>
+    </div>
+</div>
+```

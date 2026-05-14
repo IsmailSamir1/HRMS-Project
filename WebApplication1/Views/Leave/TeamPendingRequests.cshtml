@@ -1,0 +1,145 @@
+﻿@model IEnumerable<WebApplication1.Models.LeaveRequest>
+@{
+    ViewData["Title"] = "Pending Leave Requests";
+}
+
+<div class="container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1"><i class="bi bi-hourglass-split text-warning me-2"></i>Pending Leave Requests</h2>
+            <p class="text-muted mb-0">Review and approve team leave requests</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to All Requests
+        </a>
+    </div>
+
+    <!-- Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-warning bg-opacity-10 border-warning">
+                <div class="card-body text-center">
+                    <h3 class="text-warning mb-0">@ViewBag.PendingCount</h3>
+                    <small class="text-muted">Pending Requests</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="card shadow-sm">
+            <div class="card-header bg-warning bg-opacity-10">
+                <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Requests Awaiting Your Approval</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Employee</th>
+                                <th>Department</th>
+                                <th>Leave Type</th>
+                                <th>Duration</th>
+                                <th>Justification</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var request in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px;">
+                                                <span class="text-white fw-bold" style="font-size: 0.8rem;">
+                                                    @(request.Employee?.FullName?.Substring(0, 1).ToUpper() ?? "?")
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <strong>@request.Employee?.FullName</strong>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>@request.Employee?.Department?.DepartmentName</td>
+                                    <td>
+                                        <span class="badge bg-info">@request.Leave?.LeaveType</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">@request.Duration day(s)</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-truncate d-inline-block" style="max-width: 150px;" title="@request.Justification">
+                                            @(string.IsNullOrEmpty(request.Justification) ? "-" : request.Justification)
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <a asp-action="Details" asp-route-id="@request.RequestId" class="btn btn-outline-primary" title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <form asp-action="Approve" asp-route-id="@request.RequestId" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-success" title="Approve" onclick="return confirm('Approve this leave request?');">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                            </form>
+                                            <button type="button" class="btn btn-danger" title="Reject" data-bs-toggle="modal" data-bs-target="#rejectModal-@request.RequestId">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- Reject Modal -->
+                                <div class="modal fade" id="rejectModal-@request.RequestId" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-danger text-white">
+                                                <h5 class="modal-title"><i class="bi bi-x-circle me-2"></i>Reject Leave Request</h5>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <form asp-action="Reject" asp-route-id="@request.RequestId" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <div class="modal-body">
+                                                    <p>Are you sure you want to reject the leave request from <strong>@request.Employee?.FullName</strong>?</p>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Rejection Reason (Optional)</label>
+                                                        <textarea name="RejectionReason" class="form-control" rows="3" placeholder="Enter reason for rejection..."></textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="submit" class="btn btn-danger">
+                                                        <i class="bi bi-x-lg me-1"></i> Reject Request
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer text-muted">
+                <small><i class="bi bi-info-circle me-1"></i>Showing @Model.Count() pending request(s)</small>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+                <h4 class="mt-3">All Caught Up!</h4>
+                <p class="text-muted">There are no pending leave requests to review.</p>
+                <a asp-action="Index" class="btn btn-primary">
+                    <i class="bi bi-list-ul me-1"></i> View All Requests
+                </a>
+            </div>
+        </div>
+    }
+</div>

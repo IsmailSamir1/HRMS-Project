@@ -1,0 +1,230 @@
+﻿@model List<WebApplication1.Controllers.EmployeeLeavePatternViewModel>
+@{
+    ViewData["Title"] = "Leave Patterns Analysis";
+    bool isSystemAdmin = ViewBag.IsSystemAdmin == true;
+    bool isHRAdmin = ViewBag.IsHRAdmin == true;
+    int totalEmployees = ViewBag.TotalEmployees ?? 0;
+    int flaggedEmployees = ViewBag.FlaggedEmployees ?? 0;
+}
+
+<div class="container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-graph-up-arrow text-warning"></i> Leave Patterns Analysis</h2>
+            <p class="text-muted mb-0">Monitor and flag irregular leave patterns in your team</p>
+        </div>
+        <div>
+            <a asp-action="TeamPendingRequests" class="btn btn-warning me-2">
+                <i class="bi bi-hourglass-split"></i> Pending Requests
+            </a>
+            <a asp-action="Index" class="btn btn-primary me-2">
+                <i class="bi bi-list-ul"></i> All Requests
+            </a>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card border-primary shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-people display-4 text-primary"></i>
+                    <h2 class="mt-2 mb-0">@totalEmployees</h2>
+                    <p class="text-muted mb-0">Team Members</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card border-danger shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-flag-fill display-4 text-danger"></i>
+                    <h2 class="mt-2 mb-0">@flaggedEmployees</h2>
+                    <p class="text-muted mb-0">Flagged Patterns</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card border-success shadow h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle display-4 text-success"></i>
+                    <h2 class="mt-2 mb-0">@(totalEmployees - flaggedEmployees)</h2>
+                    <p class="text-muted mb-0">Normal Patterns</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="card mb-4">
+        <div class="card-body py-2">
+            <div class="d-flex align-items-center flex-wrap">
+                <strong class="me-3"><i class="bi bi-info-circle"></i> Pattern Indicators:</strong>
+                <span class="badge bg-danger me-2"><i class="bi bi-flag-fill"></i> Flagged</span>
+                <span class="badge bg-warning text-dark me-2">High Risk (60+)</span>
+                <span class="badge bg-info me-2">Medium Risk (30-59)</span>
+                <span class="badge bg-success me-2">Low Risk (0-29)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Patterns Table -->
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0"><i class="bi bi-table"></i> Team Leave Patterns</h5>
+        </div>
+        <div class="card-body p-0">
+            @if (Model == null || !Model.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-people display-1 text-muted"></i>
+                    <h5 class="mt-3 text-muted">No Team Members</h5>
+                    <p class="text-muted">No employees found in your team.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Employee</th>
+                                <th>Department</th>
+                                <th class="text-center">Total Days</th>
+                                <th class="text-center">Mon</th>
+                                <th class="text-center">Fri</th>
+                                <th class="text-center">Short</th>
+                                <th class="text-center">Sick</th>
+                                <th class="text-center">Risk</th>
+                                <th>Flags</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var emp in Model)
+                            {
+                                var riskBadge = emp.RiskLevel >= 60 ? "bg-danger" :
+                                emp.RiskLevel >= 30 ? "bg-warning text-dark" : "bg-success";
+                                var rowClass = emp.IsFlagged ? "table-danger" : "";
+
+                                <tr class="@rowClass">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            @if (emp.IsFlagged)
+                                            {
+                                                <i class="bi bi-flag-fill text-danger me-2"></i>
+                                            }
+                                            <strong>@emp.EmployeeName</strong>
+                                        </div>
+                                    </td>
+                                    <td><small class="text-muted">@emp.Department</small></td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary">@emp.TotalLeaveDays</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (emp.MondayLeaves >= 3)
+                                        {
+                                            <span class="text-danger fw-bold">@emp.MondayLeaves</span>
+                                        }
+                                        else
+                                        {
+                                            @emp.MondayLeaves
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (emp.FridayLeaves >= 3)
+                                        {
+                                            <span class="text-danger fw-bold">@emp.FridayLeaves</span>
+                                        }
+                                        else
+                                        {
+                                            @emp.FridayLeaves
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (emp.ConsecutiveShortLeaves >= 5)
+                                        {
+                                            <span class="text-warning fw-bold">@emp.ConsecutiveShortLeaves</span>
+                                        }
+                                        else
+                                        {
+                                            @emp.ConsecutiveShortLeaves
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (emp.SickLeavesThisYear >= 5)
+                                        {
+                                            <span class="text-danger fw-bold">@emp.SickLeavesThisYear</span>
+                                        }
+                                        else
+                                        {
+                                            @emp.SickLeavesThisYear
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge @riskBadge">@emp.RiskLevel%</span>
+                                    </td>
+                                    <td>
+                                        @if (emp.PatternFlags.Any())
+                                        {
+                                            <span class="text-danger small">
+                                                <i class="bi bi-exclamation-circle"></i> @emp.PatternFlags.Count flag(s)
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-success small">
+                                                <i class="bi bi-check-circle"></i> Normal
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a asp-action="EmployeeLeaveDetail" asp-route-id="@emp.EmployeeId"
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Details
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Pattern Explanations -->
+    <div class="card mt-4">
+        <div class="card-header bg-light">
+            <h6 class="mb-0"><i class="bi bi-question-circle"></i> Understanding Leave Patterns</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary">Columns Explained:</h6>
+                    <ul class="small">
+                        <li><strong>Mon:</strong> Leaves taken on Mondays (potential long weekend)</li>
+                        <li><strong>Fri:</strong> Leaves taken on Fridays (potential long weekend)</li>
+                        <li><strong>Short:</strong> Short leaves (1-2 days)</li>
+                        <li><strong>Sick:</strong> Sick leaves this year</li>
+                        <li><strong>Risk:</strong> Calculated risk score (0-100)</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-danger">Flag Triggers:</h6>
+                    <ul class="small">
+                        <li>3+ Monday absences</li>
+                        <li>3+ Friday absences</li>
+                        <li>5+ combined Monday/Friday absences</li>
+                        <li>5+ short leave instances</li>
+                        <li>5+ sick leaves in a year</li>
+                        <li>15+ total leave days</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

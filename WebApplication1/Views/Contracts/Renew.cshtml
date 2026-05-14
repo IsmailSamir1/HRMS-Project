@@ -1,0 +1,80 @@
+﻿@model WebApplication1.Models.Contract
+
+@{
+    ViewData["Title"] = "Renew Contract";
+}
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-success">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="bi bi-arrow-repeat"></i> Renew Contract</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-light border mb-4">
+                        <h6 class="text-muted text-uppercase mb-2">Renewing for Employee</h6>
+                        <h4 class="text-success mb-0">@ViewBag.EmployeeName</h4>
+                    </div>
+
+                    <form asp-action="Renew">
+                        <input type="hidden" name="OldContractId" value="@ViewBag.OldContractId" />
+                        <input type="hidden" name="EmployeeId" value="@ViewBag.EmployeeId" />
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Type" class="form-label fw-bold">New Contract Type</label>
+                                <select asp-for="Type" class="form-select">
+                                    <option value="Full-Time">Full-Time</option>
+                                    <option value="Part-Time">Part-Time</option>
+                                    <option value="Internship">Internship</option>
+                                    <option value="Consultant">Consultant</option>
+                                    <option value="Temporary">Temporary</option>
+                                </select>
+                                <span asp-validation-for="Type" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Status</label>
+                                <input type="text" class="form-control" value="Active (New)" disabled readonly />
+                            </div>
+                        </div>
+
+                        <hr class="my-4" />
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="StartDate" class="form-label fw-bold">New Start Date</label>
+                                <input asp-for="StartDate" type="date" class="form-control" />
+                                <span asp-validation-for="StartDate" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="EndDate" class="form-label fw-bold">New End Date</label>
+                                <input asp-for="EndDate" type="date" class="form-control" />
+                                <span asp-validation-for="EndDate" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning mt-4 small">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            This action will create a <strong>new contract</strong> and link it to the employee. The old contract will be marked as "Renewed".
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a asp-action="Index" class="btn btn-outline-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-success px-4">Renew Contract</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
