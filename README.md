@@ -126,8 +126,8 @@ This HRMS covers the full employee lifecycle — from account creation and atten
 1. **Prerequisites** — .NET 6+ SDK, SQL Server, Visual Studio 2022
 2. **Clone the repo**
    ```bash
-   git clone https://github.com/IsmailSamir1/HRMS.git
-   cd HRMS
+   git clone https://github.com/IsmailSamir1/HRMS-Project.git
+   cd HRMS-Project/WebApplication1
    ```
 3. **Update the connection string** in `appsettings.json` to point to your SQL Server instance
 4. **Run database migrations** or execute the SQL scripts to set up the schema
